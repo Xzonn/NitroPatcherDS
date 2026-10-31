@@ -13,7 +13,7 @@ namespace {
 constexpr const char* Root = "sd:/nitro-patcher";
 constexpr uint16_t White = 0xffff, Black = 0x8000, Gray = 0xe739;
 constexpr int Visible = 6;
-enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading, Storage };
+enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading, Storage, Confirm };
 enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage, ApPatch };
 constexpr Text MenuLabels[] = {Text::ApPatch,Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
 constexpr Command MenuCommands[] = {Command::ApPatch,Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
@@ -250,7 +250,7 @@ void render() {
         }
         backKey(); break;
     }
-    case Page::PatchInfo: case Page::Details: case Page::LicenseText:
+    case Page::PatchInfo: case Page::Details: case Page::LicenseText: case Page::Confirm: {
         heading(tr(state.page==Page::PatchInfo?Text::Intro:state.page==Page::LicenseText?Text::Licenses:Text::Details));
         for (int index=0;index<7 && state.textTop+index<int(state.lines.size());index++) text16(1,state.lines[state.textTop+index],8,34+index*16);
         if (state.lines.size()>7) {
@@ -259,9 +259,15 @@ void render() {
             fill(1,247,32+(116-height)*state.textTop/(state.lines.size()-7),2,height,Black);
         }
         separator();
-        if (!state.fatal) softkey(hint("B",Text::Back),8,161,132,Command::Back);
-        softkey("↑",184,161,28,Command::Up); softkey("↓",220,161,28,Command::Down);
-        text(1,"L / R  < >",180,178); break;
+        if (state.page==Page::Confirm) {
+            softkey(hint("A",Text::Start),8,161,132,Command::Start);
+            softkey(hint("B",Text::Back),148,161,108,Command::Back);
+        } else if (!state.fatal) softkey(hint("B",Text::Back),8,161,132,Command::Back);
+        int arrowsY=state.page==Page::Confirm?178:161;
+        softkey("↑",184,arrowsY,28,Command::Up); softkey("↓",220,arrowsY,28,Command::Down);
+        if (state.page!=Page::Confirm) text(1,"L / R  < >",180,178);
+        break;
+    }
     case Page::About:
         heading(tr(Text::About)); text(1,tr(Text::Components),8,34);
         text(1,"nds-bootstrap",8,54);text(1,"TWiLight Menu++",8,70);text(1,"nitro-patcher / md4c / fmt",8,86);
@@ -562,6 +568,29 @@ void repairStorage() {
             state.storageWorking=true;state.storageWriting=true;
             result=storage::repair(progress);show();
         } else if (down || repeat) render();
+    }
+}
+bool confirm(const std::string& detail) {
+    state.lines=wrap(una::utf8to16u(detail),228);go(Page::Confirm);render();
+    while (true) {
+        swiWaitForVBlank();scanKeys();auto down=keysDown(),repeat=keysDownRepeat();
+        bool start=down&(KEY_A|KEY_START),back=down&KEY_B;
+        if (repeat&KEY_UP) scrollLines(-1);
+        if (repeat&KEY_DOWN) scrollLines(1);
+        if (down&(KEY_L|KEY_LEFT)) scrollLines(-7);
+        if (down&(KEY_R|KEY_RIGHT)) scrollLines(7);
+        if (down&KEY_TOUCH) {
+            touchPosition touch;touchRead(&touch);
+            for (const auto& hit : hits) if (touch.px>=hit.x && touch.px<hit.x+hit.width && touch.py>=hit.y && touch.py<hit.y+hit.height) {
+                if (hit.command==Command::Start) start=true;
+                else if (hit.command==Command::Back) back=true;
+                else if (hit.command==Command::Up) scrollLines(-1);
+                else if (hit.command==Command::Down) scrollLines(1);
+                break;
+            }
+        }
+        if (back || start) {state.lines.clear();returnHome();render();return !back;}
+        if (down || repeat) render();
     }
 }
 void error(const std::string& detail,bool mismatch) {state.fatal=false;state.detail=detail;state.mismatch=mismatch;go(Page::Error);render();}

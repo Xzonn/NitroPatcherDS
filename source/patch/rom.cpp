@@ -388,7 +388,7 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
         }
     }
     std::unique_ptr<CompleteTwl> twl;
-    if (format2 && h.unitcode == 2) {
+    if (format2 && h.unitcode == 2 && !work.dsOnly) {
         twl = std::make_unique<CompleteTwl>(work, input, h, signedOverlays);
         files.push_back({"arm9i.bin", 0xffff, twl->program(2), 0xffff, h.dsi9_rom_offset, h.dsi9_size});
         files.push_back({"arm7i.bin", 0xffff, twl->program(3), 0xffff, h.dsi7_rom_offset, h.dsi7_size});
@@ -618,6 +618,28 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
         if (arm9->size >= 12) arm9->read(arm9->size - 12, &marker, sizeof(marker));
         nitrocode = marker == 0xdec00621;
     }
+    if (work.dsOnly && h.unitcode == 2 && unique.count("overarm9.bin")) {
+        auto table = format2 ? overlayTables[0] : readOverlays(system("overarm9.bin"));
+        std::vector<SourcePtr> current;
+        for (auto& entry : table) if (uint32_t(entry.reserved) & 0x2000000)
+            current.push_back(system(overlayPath(9, entry.id)));
+        arm9 = updateOverlayHashes(work, arm9, h, nitrocode, signedOverlays, current,
+            package.has("arm9.bin") || package.has("xdelta/arm9.bin"));
+    }
+    if (work.dsOnly && h.unitcode == 2) {
+        patchRequire(arm9->size >= 0x4000 + (nitrocode ? 12 : 0), "ARM9 secure area is truncated");
+        auto secure = readBytes(arm9, 0, 0x4000);
+        std::memcpy(&secureMarker, secure.data(), sizeof(secureMarker));
+        bool plain = secureMarker == UINT64_C(0xe7ffdeffe7ffdeff);
+        uint32_t previous, current;
+        input->read(12, &previous, sizeof(previous));
+        std::memcpy(&current, h.gamecode, sizeof(current));
+        if (!plain) decrypt_arm9(previous, secure.data());
+        unsigned_short crc = CalcCrc16(secure.data() + 0x10, 0x7f0);
+        std::memcpy(secure.data() + 0xe, &crc, sizeof(crc));
+        if (!plain) encrypt_arm9(current, secure.data());
+        arm9 = overwrite(work, arm9, 0, secure.data(), secure.size());
+    }
     h.arm9_rom_offset = output->size;
     h.arm9_size = arm9->size - (nitrocode ? 12 : 0);
     write(arm9, 0xffff, true);
@@ -655,7 +677,7 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
     secureMarker = 0;
     if (output->size >= 0x4008) output->read(0x4000, &secureMarker, sizeof(secureMarker));
     decrypted = secureMarker == UINT64_C(0xe7ffdeffe7ffdeff);
-    if ((h.unitcode & 2) && (h.dsi_flags & 1) && h.tid_high && h.tid_high != 0xffffffff) output = writeTwl(work, output, input, h, decrypted);
+    if (!work.dsOnly && (h.unitcode & 2) && (h.dsi_flags & 1) && h.tid_high && h.tid_high != 0xffffffff) output = writeTwl(work, output, input, h, decrypted);
     h.application_end_offset = output->size;
     uint32_t capacity = 0x20000;
     while (capacity < output->size + signature.size()) capacity *= 2;

@@ -17,9 +17,11 @@ static const uint8_t hmacKey[64] = {
 struct TwlHasher::State {
     mbedtls_md_context_t context;
     std::vector<uint8_t> buffer;
+    const char* stage;
 };
 
-TwlHasher::TwlHasher() : state(std::make_unique<State>()) {
+TwlHasher::TwlHasher(const char* stage) : state(std::make_unique<State>()) {
+    state->stage = stage;
     mbedtls_md_init(&state->context);
     require(mbedtls_md_setup(&state->context, mbedtls_md_info_from_type(MBEDTLS_MD_SHA1), 1) == 0
         && mbedtls_md_hmac_starts(&state->context, hmacKey, sizeof(hmacKey)) == 0, "Cannot initialize TWL HMAC");
@@ -32,13 +34,13 @@ std::array<uint8_t, 20> TwlHasher::operator()(SourcePtr input, uint32_t offset, 
     auto& buffer = state->buffer;
     buffer.resize(std::min(BufferSize, std::max<uint32_t>(length, 1)));
     require(mbedtls_md_hmac_reset(&context) == 0, "Cannot reset TWL HMAC");
-    if (detail) progress("Checking DSi data", 0, length, true, detail);
+    if (detail) progress(state->stage, 0, length, true, detail);
     for (uint32_t position = 0; position < length;) {
         uint32_t take = std::min<uint32_t>(buffer.size(), length - position);
         input->read(offset + position, buffer.data(), take);
         require(mbedtls_md_hmac_update(&context, buffer.data(), take) == 0, "Cannot update TWL HMAC");
         position += take;
-        if (detail) progress("Checking DSi data", position, length, true, detail);
+        if (detail) progress(state->stage, position, length, true, detail);
     }
     std::array<uint8_t, 20> result;
     require(mbedtls_md_hmac_finish(&context, result.data()) == 0, "Cannot finish TWL HMAC");

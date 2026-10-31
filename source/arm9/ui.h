@@ -23,6 +23,7 @@ void preparing();
 void progress(const char* stage, uint32_t completed, uint32_t total, const char* detail, uint64_t elapsed, const PreparationProgress& preparation);
 void report(bool working);
 void repairStorage();
+bool confirm(const std::string& detail);
 void error(const std::string& detail, bool mismatch = false);
 [[noreturn]] void fatal(const std::string& detail);
 }

@@ -13,6 +13,7 @@ namespace np3d {
 constexpr uint32_t FormatVersion = 1;
 constexpr uint32_t RulesVersion = 3;
 constexpr uint32_t BufferSize = 65536;
+constexpr const char* DsModeDeltaError = "Prepare whole-ROM xdelta patches for DSi-enhanced games on a 3DS or DSi, then copy the prepared cache to the NDS. Use the same Game Card, patches and patch order.";
 
 using FatalHandler = void (*)(const char*);
 void setFatalHandler(FatalHandler handler);
@@ -122,7 +123,8 @@ struct Workspace {
     std::shared_ptr<Disk> payload;
     unsigned int next = 0;
     std::string error;
-    Workspace(const std::string& directory, SourcePtr card);
+    bool dsOnly = false;
+    Workspace(const std::string& directory, SourcePtr card, bool dsOnly = false);
     std::shared_ptr<Map> map();
 };
 std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, const std::string& delta, const std::string& label = "");
@@ -136,8 +138,8 @@ struct Prepared {
     std::string error;
     bool mismatch = false;
 };
-Prepared prepare(SourcePtr card, const std::string& patch, const std::string& root);
-Prepared prepare(SourcePtr card, const std::vector<std::string>& patches, const std::string& root);
+Prepared prepare(SourcePtr card, const std::string& patch, const std::string& root, bool dsOnly = false);
+Prepared prepare(SourcePtr card, const std::vector<std::string>& patches, const std::string& root, bool dsOnly = false);
 std::vector<std::string> listPatches(const std::string& root);
 
 }

@@ -166,7 +166,7 @@ std::vector<std::string> listPatches(const std::string& root) {
     return result;
 }
 
-Prepared prepare(SourcePtr card, const std::string& path, const std::string& root) {
+Prepared prepare(SourcePtr card, const std::string& path, const std::string& root, bool dsOnly) {
     require(path.compare(0, root.size() + 9, root + "/patches/") == 0 && path.find("/../") == std::string::npos,
         "Place patches in nitro-patcher/patches");
     makeDirectory(root);
@@ -185,6 +185,16 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     if (!isDeltaPatch(path)) {
         archive = std::make_unique<Package>(path);
         if (!archive->metadata.error.empty()) return {"", nullptr, false, archive->metadata.error, false};
+    }
+    if (dsOnly) {
+        auto directory = root + "/cache/" + cardKey + "/" + patchCrc;
+        if (!complete(directory + "/ready", patchCrc, identity, card->size)
+            && !complete(directory + "/pending", patchCrc, identity, card->size)) {
+            if (isDeltaPatch(path) || std::any_of(archive->entries.begin(), archive->entries.end(), [](const auto& entry) {
+                return entry.first.compare(0, 14, "preprocessing/") == 0;
+            })) return {"", nullptr, false, DsModeDeltaError, false};
+            cardKey += "-ds";
+        }
     }
     makeDirectory(root + "/cache/" + cardKey);
     std::string directory = root + "/cache/" + cardKey + "/" + patchCrc;
@@ -211,14 +221,14 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
         std::string error;
         bool mismatch = false;
         bool matchesCard = [&]() {
-            Workspace work(pending + "/work", card);
+            Workspace work(pending + "/work", card, dsOnly);
             std::shared_ptr<Map> virtualRom;
             if (isDeltaPatch(path)) virtualRom = applyDelta(work, card, path, path.substr(path.find_last_of('/') + 1));
             else {
                 Package& package = *archive;
                 package.work = &work;
-                if (package.needsMd5()) romMd5 = cardDigest(card, root, identity);
-                if (package.has("md5.txt")) {
+                if (!dsOnly && package.needsMd5()) romMd5 = cardDigest(card, root, identity);
+                if (!dsOnly && package.has("md5.txt")) {
                     auto bytes = package.bytes("md5.txt");
                     std::string content(bytes.begin(), bytes.end());
                     bool matched = false;
@@ -289,9 +299,9 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     return {ready, rom, reused};
 }
 
-Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const std::string& root) {
+Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const std::string& root, bool dsOnly) {
     require(!paths.empty(), "No patches selected");
-    if (paths.size() == 1) return prepare(card, paths.front(), root);
+    if (paths.size() == 1) return prepare(card, paths.front(), root, dsOnly);
     makeDirectory(root + "/cache");
     makeDirectory(root + "/config");
     auto rawHeader = readBytes(card, 0, 512);
@@ -311,6 +321,20 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
         }
     }
     std::string patchCrc = digest(hashes.data(), hashes.size(), true);
+    if (dsOnly) {
+        auto directory = root + "/cache/" + cardKey + "/" + patchCrc;
+        if (!complete(directory + "/ready", patchCrc, identity, card->size)
+            && !complete(directory + "/pending", patchCrc, identity, card->size)) {
+            for (const auto& path : paths) {
+                if (isDeltaPatch(path)) return {"", nullptr, false, DsModeDeltaError, false};
+                Package package(path);
+                if (std::any_of(package.entries.begin(), package.entries.end(), [](const auto& entry) {
+                    return entry.first.compare(0, 14, "preprocessing/") == 0;
+                })) return {"", nullptr, false, DsModeDeltaError, false};
+            }
+            cardKey += "-ds";
+        }
+    }
     makeDirectory(root + "/cache/" + cardKey);
     std::string directory = root + "/cache/" + cardKey + "/" + patchCrc;
     makeDirectory(directory);
@@ -330,7 +354,7 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
         std::string error;
         bool mismatch = false;
         bool matched = [&]() {
-            Workspace work(pending + "/work", card);
+            Workspace work(pending + "/work", card, dsOnly);
             SourcePtr input = card;
             for (size_t index = 0; index < paths.size(); index++) {
                 progress("Patch sequence", index + 1, paths.size(), false, paths[index].c_str());
@@ -341,11 +365,11 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
                 }
                 Package package(paths[index], work);
                 std::string inputMd5;
-                if (package.needsMd5()) {
+                if (!dsOnly && package.needsMd5()) {
                     if (index) inputMd5 = digest(input, false, "Checking game data");
                     else inputMd5 = romMd5 = cardDigest(card, root, identity);
                 }
-                if (package.has("md5.txt")) {
+                if (!dsOnly && package.has("md5.txt")) {
                     auto bytes = package.bytes("md5.txt");
                     std::string content(bytes.begin(), bytes.end());
                     bool found = false;

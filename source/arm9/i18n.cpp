@@ -29,8 +29,8 @@ const char* const keys[] = {
     "storage_repair.stage.backup","storage_repair.stage.repair","storage_repair.stage.verify",
     "storage_repair.copy","storage_repair.differences","storage_repair.fsinfo","storage_repair.clean",
     "storage_repair.ready","storage_repair.damaged","storage_repair.ambiguous","storage_repair.unsupported",
-    "storage_repair.busy","storage_repair.memory","storage_repair.io_error","storage_repair.repaired","storage_repair.backup_path","prepare.stage.check_dsi_data","patch_error.dsi_mode_required",
-    "menu.ap_patch","common.enabled","common.disabled"
+    "storage_repair.busy","storage_repair.memory","storage_repair.io_error","storage_repair.repaired","storage_repair.backup_path","prepare.stage.check_dsi_data","patch_error.ds_mode_xdelta",
+    "menu.ap_patch","common.enabled","common.disabled","prepare.ds_mode_notice"
 };
 static_assert(sizeof(keys)/sizeof(keys[0])==int(Text::Count));
 using Json = std::unique_ptr<cJSON,decltype(&cJSON_Delete)>;

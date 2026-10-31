@@ -619,9 +619,9 @@
   },
   {
     "index": 104,
-    "key": "patch_error.dsi_mode_required",
-    "original": "Preparing patches for this DSi-enhanced cartridge requires DSi mode. Use a 3DS or DSi.",
-    "translation": "이 DSi 확장 게임 카드의 패치를 준비하려면 DSi 모드가 필요합니다. 3DS 또는 DSi를 사용해 주세요."
+    "key": "patch_error.ds_mode_xdelta",
+    "original": "NDS cannot prepare whole-ROM xdelta patches for DSi-enhanced games. Prepare the cache on a 3DS or DSi, then copy the matching nitro-patcher/cache/ directory to this card. Use the same Game Card, patches and patch order.",
+    "translation": "NDS에서는 DSi 확장 게임의 전체 ROM xdelta 패치를 준비할 수 없습니다. 3DS 또는 DSi에서 캐시를 준비한 뒤 nitro-patcher/cache/ 안의 해당 폴더를 이 메모리 카드로 복사해 주세요. 같은 게임 카드, 패치와 적용 순서를 사용해야 합니다."
   },
   {
     "index": 105,
@@ -640,5 +640,11 @@
     "key": "common.disabled",
     "original": "Disabled",
     "translation": "꺼짐"
+  },
+  {
+    "index": 108,
+    "key": "prepare.ds_mode_notice",
+    "original": "This game will run in DS mode.",
+    "translation": "이 게임은 DS 모드로 실행됩니다."
   }
 ]

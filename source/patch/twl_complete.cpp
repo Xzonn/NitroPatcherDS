@@ -216,13 +216,18 @@ void CompleteTwl::setProgram(unsigned int index, SourcePtr data) {
 
 SourcePtr CompleteTwl::updateOverlays(SourcePtr arm9, Header& header, bool nitrocode,
     const std::vector<SourcePtr>& overlays, bool replaced) {
+    return updateOverlayHashes(work, arm9, header, nitrocode, overlaySources, overlays, replaced);
+}
+
+SourcePtr updateOverlayHashes(Workspace& work, SourcePtr arm9, Header& header, bool nitrocode,
+    const std::vector<SourcePtr>& overlaySources, const std::vector<SourcePtr>& overlays, bool replaced) {
     if (overlays.size() != overlaySources.size()) {
         patchRequire(replaced, "Changing signed overlay count requires an ARM9 replacement");
         return arm9;
     }
     if (overlays == overlaySources) return arm9;
     std::vector<uint8_t> previous, current;
-    TwlHasher hash;
+    TwlHasher hash(work.dsOnly ? "Checking game data" : "Checking DSi data");
     for (size_t index = 0; index < overlays.size(); index++) {
         auto original = hash(overlaySources[index], 0, overlaySources[index]->size, "overarm9.bin");
         previous.insert(previous.end(), original.begin(), original.end());

@@ -23,7 +23,7 @@ struct PreparationPlan {
     std::string windowName;
     PreparationWork* windowWork = nullptr;
     bool ready = false, cardRead = false, dsi = false;
-    void initialize(SourcePtr source, const std::vector<std::string>& paths, uint32_t launchSize, bool reused = false);
+    void initialize(SourcePtr source, const std::vector<std::string>& paths, uint32_t launchSize, bool reused = false, bool dsOnly = false);
     void set(PreparationWork& task, uint64_t size, uint64_t completed);
     void update(const char* stage, uint32_t completed, uint32_t total, const char* detail);
     void finishPatch();

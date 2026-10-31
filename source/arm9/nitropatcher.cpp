@@ -190,9 +190,9 @@ int main(int argc,char** argv) {
         }
         if ((action==ui::Action::Launch && !ui::selectedPatches().empty()) || !isDSiMode()) {
             auto paths=action==ui::Action::Launch?ui::selectedPatches():std::vector<std::string>();
-            if (!isDSiMode() && gameHeader->unitCode==2 && !paths.empty()) {
-                ui::error(ui::tr(ui::Text::DSiModeRequired));continue;
-            }
+            bool dsOnly=!isDSiMode() && gameHeader->unitCode==2;
+            if (dsOnly && std::any_of(paths.begin(),paths.end(),[](const std::string& path){return !np3d::isDeltaPatch(path);})
+                && !ui::confirm(ui::tr(ui::Text::DSModeNotice))) continue;
             std::string description;
             for (const auto& path : paths) {if (!description.empty()) description+=" -> ";description+=path;}
             np3d::beginPreparationLog("sd:/nitro-patcher",description);
@@ -208,7 +208,7 @@ int main(int argc,char** argv) {
                     persistentCard.reset();persistentChipId=0;hasCard=false;
                     ui::noCard(true);ui::error(error);continue;
                 }
-                planPatchProgress(card,paths);
+                planPatchProgress(card,paths,dsOnly);
                 np3d::Prepared prepared;
                 if (paths.empty()) {
                     prepared.directory="sd:/nitro-patcher/runtime/original";
@@ -218,8 +218,9 @@ int main(int argc,char** argv) {
                     prepared.rom=std::make_shared<np3d::Map>(prepared.directory+"/map.bin",payload,card,true);
                     prepared.rom->append(np3d::Kind::Card,0,card->size);
                     prepared.rom->finish();payload->sync();
-                } else prepared=np3d::prepare(card,paths,"sd:/nitro-patcher");
+                } else prepared=np3d::prepare(card,paths,"sd:/nitro-patcher",dsOnly);
                 error=prepared.error;reused=prepared.reused;mismatch=prepared.mismatch;
+                if (error==np3d::DsModeDeltaError) error=ui::tr(ui::Text::DSModeXdelta);
                 if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel,ui::apPatchEnabled());finishPatchProgress(reused);}
                 else np3d::setProgressHandler(nullptr);
             }

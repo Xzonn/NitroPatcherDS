@@ -8,12 +8,14 @@ class TwlHasher {
     struct State;
     std::unique_ptr<State> state;
 public:
-    TwlHasher();
+    explicit TwlHasher(const char* stage = "Checking DSi data");
     ~TwlHasher();
     std::array<uint8_t, 20> operator()(SourcePtr input, uint32_t offset, uint32_t length, const char* detail = nullptr);
 };
 SourcePtr twlCrypt(Workspace& work, SourcePtr input, uint32_t offset, uint32_t length,
     const Header& header, const uint8_t* counter);
+SourcePtr updateOverlayHashes(Workspace& work, SourcePtr arm9, Header& header, bool nitrocode,
+    const std::vector<SourcePtr>& original, const std::vector<SourcePtr>& overlays, bool replaced);
 
 struct TwlSection {
     uint32_t start, originalSize;

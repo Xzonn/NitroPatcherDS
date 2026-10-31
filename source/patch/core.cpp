@@ -532,7 +532,7 @@ std::string convert(const std::string& input, const char* encoding) {
     return output;
 }
 
-Workspace::Workspace(const std::string& path, SourcePtr input) : directory(path), card(input) {
+Workspace::Workspace(const std::string& path, SourcePtr input, bool ds) : directory(path), card(input), dsOnly(ds) {
     makeDirectory(directory);
     payload = std::make_shared<Disk>(directory + "/data.bin", "w+b");
 }
