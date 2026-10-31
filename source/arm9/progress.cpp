@@ -12,12 +12,12 @@ ui::PreparationProgress preparation;
 np3d::PreparationPlan plan;
 np3d::SourcePtr plannedCard;
 std::vector<std::string> plannedPaths;
-bool plannedDsOnly;
+bool plannedDsOnly,plannedSkipRomMd5;
 
 void showProgress(const char* stage, uint32_t completed, uint32_t total, bool bytes, const char* detail) {
     if (std::strcmp(stage,"Planning patch preparation")==0 || std::strcmp(stage,"Using prepared cache")==0) {
         bool reused=std::strcmp(stage,"Using prepared cache")==0;
-        plan.initialize(plannedCard,plannedPaths,np3d::resourceSize("bootstrap.nds"),reused,plannedDsOnly);
+        plan.initialize(plannedCard,plannedPaths,np3d::resourceSize("bootstrap.nds"),reused,plannedDsOnly,plannedSkipRomMd5);
         for (auto& item : plan.patches) plan.set(item.hash,item.hash.size,item.hash.size);
         plan.nextHash=plan.patches.size();
         if (!reused) return;
@@ -50,8 +50,8 @@ void beginPatchProgress() {
     started=rendered=np3d::preparationMilliseconds();
     ui::preparing();np3d::setProgressHandler(showProgress);
 }
-void planPatchProgress(np3d::SourcePtr card,const std::vector<std::string>& paths,bool dsOnly) {
-    plannedCard=card;plannedPaths=paths;plannedDsOnly=dsOnly;
+void planPatchProgress(np3d::SourcePtr card,const std::vector<std::string>& paths,bool dsOnly,bool skipRomMd5) {
+    plannedCard=card;plannedPaths=paths;plannedDsOnly=dsOnly;plannedSkipRomMd5=skipRomMd5;
 }
 void finishPatchProgress(bool reused) {
     np3d::progress(reused?"Patch cache reused":"Patch cache prepared",1,1);

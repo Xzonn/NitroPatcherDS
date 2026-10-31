@@ -66,8 +66,12 @@ Package::~Package() {
 bool Package::has(const std::string& name) const { return entries.find(normalize(name)) != entries.end(); }
 
 bool Package::needsMd5() const {
+    return has("md5.txt") || hasPreprocessing();
+}
+
+bool Package::hasPreprocessing() const {
     auto found = entries.lower_bound("preprocessing/");
-    return has("md5.txt") || (found != entries.end() && found->first.compare(0, 14, "preprocessing/") == 0);
+    return found != entries.end() && found->first.compare(0, 14, "preprocessing/") == 0;
 }
 
 struct Entry final : Source {

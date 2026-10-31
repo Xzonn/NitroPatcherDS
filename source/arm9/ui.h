@@ -19,6 +19,7 @@ void noCard(bool missing = false, bool reinsert = false);
 Action update();
 const std::vector<std::string>& selectedPatches();
 bool apPatchEnabled();
+bool skipRomMd5Enabled();
 void preparing();
 void progress(const char* stage, uint32_t completed, uint32_t total, const char* detail, uint64_t elapsed, const PreparationProgress& preparation);
 void report(bool working);

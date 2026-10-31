@@ -17,6 +17,7 @@ struct Settings {
     std::string language;
     std::map<std::string, std::vector<std::string>> games;
     std::map<std::string, bool> apPatch;
+    std::map<std::string, bool> skipRomMd5;
 };
 Settings loadSettings(const std::string& root);
 void saveSettings(const std::string& root, const Settings& settings);

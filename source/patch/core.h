@@ -14,6 +14,7 @@ constexpr uint32_t FormatVersion = 1;
 constexpr uint32_t RulesVersion = 3;
 constexpr uint32_t BufferSize = 65536;
 constexpr const char* DsModeDeltaError = "Prepare whole-ROM xdelta patches for DSi-enhanced games on a 3DS or DSi, then copy the prepared cache to the NDS. Use the same Game Card, patches and patch order.";
+constexpr const char* DsModeMd5Error = "NDS cannot verify the full ROM MD5 of a DSi-enhanced cartridge. Enable skipping ROM MD5, or prepare a verified cache on a 3DS or DSi.";
 
 using FatalHandler = void (*)(const char*);
 void setFatalHandler(FatalHandler handler);
@@ -138,8 +139,8 @@ struct Prepared {
     std::string error;
     bool mismatch = false;
 };
-Prepared prepare(SourcePtr card, const std::string& patch, const std::string& root, bool dsOnly = false);
-Prepared prepare(SourcePtr card, const std::vector<std::string>& patches, const std::string& root, bool dsOnly = false);
+Prepared prepare(SourcePtr card, const std::string& patch, const std::string& root, bool dsOnly = false, bool skipRomMd5 = false);
+Prepared prepare(SourcePtr card, const std::vector<std::string>& patches, const std::string& root, bool dsOnly = false, bool skipRomMd5 = false);
 std::vector<std::string> listPatches(const std::string& root);
 
 }

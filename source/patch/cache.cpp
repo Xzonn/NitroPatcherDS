@@ -66,13 +66,15 @@ static std::string cardDigest(SourcePtr card, const std::string& root, const std
 }
 
 static bool complete(const std::string& directory, const std::string& patch,
-    const std::string& identity, uint32_t cardSize) {
+    const std::string& identity, uint32_t cardSize, bool checkMd5 = false, bool legacyChecked = true) {
     for (const char* name : {"complete", "manifest.json", "map.bin", "data.bin"}) if (!exists(directory + "/" + name)) return false;
     auto metadata = readJson(directory + "/manifest.json");
     if (!cJSON_IsObject(metadata.get()) || !number(metadata.get(), "format", FormatVersion)
         || !number(metadata.get(), "rules", RulesVersion)
         || text(metadata.get(), "patchCrc32") != patch || text(metadata.get(), "cardIdentity") != identity
         || !number(metadata.get(), "cardSize", cardSize)) return false;
+    auto checked = cJSON_GetObjectItemCaseSensitive(metadata.get(), "romMd5Checked");
+    if (checkMd5 && !(checked ? cJSON_IsTrue(checked) : legacyChecked)) return false;
     Disk map(directory + "/map.bin"), data(directory + "/data.bin");
     return number(metadata.get(), "mapSize", map.size) && number(metadata.get(), "dataSize", data.size);
 }
@@ -166,7 +168,7 @@ std::vector<std::string> listPatches(const std::string& root) {
     return result;
 }
 
-Prepared prepare(SourcePtr card, const std::string& path, const std::string& root, bool dsOnly) {
+Prepared prepare(SourcePtr card, const std::string& path, const std::string& root, bool dsOnly, bool skipRomMd5) {
     require(path.compare(0, root.size() + 9, root + "/patches/") == 0 && path.find("/../") == std::string::npos,
         "Place patches in nitro-patcher/patches");
     makeDirectory(root);
@@ -186,14 +188,15 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
         archive = std::make_unique<Package>(path);
         if (!archive->metadata.error.empty()) return {"", nullptr, false, archive->metadata.error, false};
     }
+    bool hasMd5 = archive && archive->has("md5.txt");
+    bool checkMd5 = hasMd5 && !skipRomMd5, dsCache = false;
     if (dsOnly) {
         auto directory = root + "/cache/" + cardKey + "/" + patchCrc;
-        if (!complete(directory + "/ready", patchCrc, identity, card->size)
-            && !complete(directory + "/pending", patchCrc, identity, card->size)) {
-            if (isDeltaPatch(path) || std::any_of(archive->entries.begin(), archive->entries.end(), [](const auto& entry) {
-                return entry.first.compare(0, 14, "preprocessing/") == 0;
-            })) return {"", nullptr, false, DsModeDeltaError, false};
+        if (!complete(directory + "/ready", patchCrc, identity, card->size, checkMd5)
+            && !complete(directory + "/pending", patchCrc, identity, card->size, checkMd5)) {
+            if (isDeltaPatch(path) || archive->hasPreprocessing()) return {"", nullptr, false, DsModeDeltaError, false};
             cardKey += "-ds";
+            dsCache = true;
         }
     }
     makeDirectory(root + "/cache/" + cardKey);
@@ -202,9 +205,9 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     makeDirectory(directory);
     std::string ready = directory + "/ready", pending = directory + "/pending";
     progress("Looking for cache", 0, 0);
-    bool reused = complete(ready, patchCrc, identity, card->size);
+    bool reused = complete(ready, patchCrc, identity, card->size, checkMd5, !dsCache);
     logPreparation(std::string("CACHE ready complete=") + (reused ? "true" : "false"));
-    if (!reused && complete(pending, patchCrc, identity, card->size)) {
+    if (!reused && complete(pending, patchCrc, identity, card->size, checkMd5, !dsCache)) {
         removeTree(ready);
         logPreparation("CACHE recover begin " + pending);
         require(std::rename(pending.c_str(), ready.c_str()) == 0, "Cannot recover completed cache");
@@ -213,6 +216,7 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     }
     if (reused) progress("Using prepared cache",0,0);
     if (!reused) {
+        if (dsOnly && checkMd5) return {"", nullptr, false, DsModeMd5Error, false};
         progress("Planning patch preparation", 0, 0);
         progress("Removing unfinished files", 0, 0);
         removeTree(pending);
@@ -227,8 +231,8 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
             else {
                 Package& package = *archive;
                 package.work = &work;
-                if (!dsOnly && package.needsMd5()) romMd5 = cardDigest(card, root, identity);
-                if (!dsOnly && package.has("md5.txt")) {
+                if ((!skipRomMd5 || package.hasPreprocessing()) && package.needsMd5()) romMd5 = cardDigest(card, root, identity);
+                if (!skipRomMd5 && package.has("md5.txt")) {
                     auto bytes = package.bytes("md5.txt");
                     std::string content(bytes.begin(), bytes.end());
                     bool matched = false;
@@ -263,6 +267,7 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
             cJSON_AddNumberToObject(metadata.get(), "format", FormatVersion);
             cJSON_AddNumberToObject(metadata.get(), "rules", RulesVersion);
             cJSON_AddStringToObject(metadata.get(), "romMd5", romMd5.c_str());
+            cJSON_AddBoolToObject(metadata.get(), "romMd5Checked", !skipRomMd5 || !hasMd5);
             cJSON_AddStringToObject(metadata.get(), "patchCrc32", patchCrc.c_str());
             cJSON_AddStringToObject(metadata.get(), "patchId", patchId.c_str());
             cJSON_AddStringToObject(metadata.get(), "cardIdentity", identity.c_str());
@@ -299,9 +304,9 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     return {ready, rom, reused};
 }
 
-Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const std::string& root, bool dsOnly) {
+Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const std::string& root, bool dsOnly, bool skipRomMd5) {
     require(!paths.empty(), "No patches selected");
-    if (paths.size() == 1) return prepare(card, paths.front(), root, dsOnly);
+    if (paths.size() == 1) return prepare(card, paths.front(), root, dsOnly, skipRomMd5);
     makeDirectory(root + "/cache");
     makeDirectory(root + "/config");
     auto rawHeader = readBytes(card, 0, 512);
@@ -310,6 +315,7 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
     std::string cardKey = identity + "-" + std::to_string(card->size);
     std::string romMd5;
     std::string hashes = "np3d-chain-v1\n", names;
+    bool hasMd5 = false, dsCache = false;
     for (const auto& path : paths) {
         require(path.compare(0, root.size() + 9, root + "/patches/") == 0 && path.find("/../") == std::string::npos,
             "Place patches in nitro-patcher/patches");
@@ -318,21 +324,22 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
         if (!isDeltaPatch(path)) {
             Package package(path);
             if (!package.metadata.error.empty()) return {"", nullptr, false, package.metadata.error, false};
+            hasMd5 = hasMd5 || package.has("md5.txt");
         }
     }
     std::string patchCrc = digest(hashes.data(), hashes.size(), true);
+    bool checkMd5 = hasMd5 && !skipRomMd5;
     if (dsOnly) {
         auto directory = root + "/cache/" + cardKey + "/" + patchCrc;
-        if (!complete(directory + "/ready", patchCrc, identity, card->size)
-            && !complete(directory + "/pending", patchCrc, identity, card->size)) {
+        if (!complete(directory + "/ready", patchCrc, identity, card->size, checkMd5)
+            && !complete(directory + "/pending", patchCrc, identity, card->size, checkMd5)) {
             for (const auto& path : paths) {
                 if (isDeltaPatch(path)) return {"", nullptr, false, DsModeDeltaError, false};
                 Package package(path);
-                if (std::any_of(package.entries.begin(), package.entries.end(), [](const auto& entry) {
-                    return entry.first.compare(0, 14, "preprocessing/") == 0;
-                })) return {"", nullptr, false, DsModeDeltaError, false};
+                if (package.hasPreprocessing()) return {"", nullptr, false, DsModeDeltaError, false};
             }
             cardKey += "-ds";
+            dsCache = true;
         }
     }
     makeDirectory(root + "/cache/" + cardKey);
@@ -340,14 +347,15 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
     makeDirectory(directory);
     std::string ready = directory + "/ready", pending = directory + "/pending";
     progress("Looking for cache",0,0);
-    bool reused = complete(ready, patchCrc, identity, card->size);
-    if (!reused && complete(pending, patchCrc, identity, card->size)) {
+    bool reused = complete(ready, patchCrc, identity, card->size, checkMd5, !dsCache);
+    if (!reused && complete(pending, patchCrc, identity, card->size, checkMd5, !dsCache)) {
         removeTree(ready);
         require(std::rename(pending.c_str(), ready.c_str()) == 0, "Cannot recover completed cache");
         reused = true;
     }
     if (reused) progress("Using prepared cache",0,0);
     if (!reused) {
+        if (dsOnly && checkMd5) return {"", nullptr, false, DsModeMd5Error, false};
         progress("Planning patch preparation", 0, 0);
         removeTree(pending);
         makeDirectory(pending);
@@ -365,11 +373,11 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
                 }
                 Package package(paths[index], work);
                 std::string inputMd5;
-                if (!dsOnly && package.needsMd5()) {
+                if ((!skipRomMd5 || package.hasPreprocessing()) && package.needsMd5()) {
                     if (index) inputMd5 = digest(input, false, "Checking game data");
                     else inputMd5 = romMd5 = cardDigest(card, root, identity);
                 }
-                if (!dsOnly && package.has("md5.txt")) {
+                if (!skipRomMd5 && package.has("md5.txt")) {
                     auto bytes = package.bytes("md5.txt");
                     std::string content(bytes.begin(), bytes.end());
                     bool found = false;
@@ -402,6 +410,7 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
             cJSON_AddNumberToObject(metadata.get(), "format", FormatVersion);
             cJSON_AddNumberToObject(metadata.get(), "rules", RulesVersion);
             cJSON_AddStringToObject(metadata.get(), "romMd5", romMd5.c_str());
+            cJSON_AddBoolToObject(metadata.get(), "romMd5Checked", !skipRomMd5 || !hasMd5);
             cJSON_AddStringToObject(metadata.get(), "patchCrc32", patchCrc.c_str());
             cJSON_AddStringToObject(metadata.get(), "cardIdentity", identity.c_str());
             cJSON_AddNumberToObject(metadata.get(), "cardSize", card->size);

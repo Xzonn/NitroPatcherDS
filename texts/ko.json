@@ -646,5 +646,17 @@
     "key": "prepare.ds_mode_notice",
     "original": "This game will run in DS mode.",
     "translation": "이 게임은 DS 모드로 실행됩니다."
+  },
+  {
+    "index": 109,
+    "key": "menu.skip_rom_md5",
+    "original": "Skip ROM MD5: {state}",
+    "translation": "ROM MD5 검사 생략: {state}"
+  },
+  {
+    "index": 110,
+    "key": "patch_error.ds_mode_md5_required",
+    "original": "NDS cannot verify the full ROM MD5 of a DSi-enhanced cartridge. Enable skipping ROM MD5, or prepare a verified cache on a 3DS or DSi.",
+    "translation": "NDS에서는 DSi 확장 게임 카드의 전체 ROM MD5를 검사할 수 없습니다. ‘ROM MD5 검사 생략’을 켜거나 3DS／DSi에서 검사가 완료된 캐시를 준비해 주세요."
   }
 ]

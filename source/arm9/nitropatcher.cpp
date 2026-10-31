@@ -191,6 +191,7 @@ int main(int argc,char** argv) {
         if ((action==ui::Action::Launch && !ui::selectedPatches().empty()) || !isDSiMode()) {
             auto paths=action==ui::Action::Launch?ui::selectedPatches():std::vector<std::string>();
             bool dsOnly=!isDSiMode() && gameHeader->unitCode==2;
+            bool skipRomMd5=ui::skipRomMd5Enabled();
             if (dsOnly && std::any_of(paths.begin(),paths.end(),[](const std::string& path){return !np3d::isDeltaPatch(path);})
                 && !ui::confirm(ui::tr(ui::Text::DSModeNotice))) continue;
             std::string description;
@@ -208,7 +209,7 @@ int main(int argc,char** argv) {
                     persistentCard.reset();persistentChipId=0;hasCard=false;
                     ui::noCard(true);ui::error(error);continue;
                 }
-                planPatchProgress(card,paths,dsOnly);
+                planPatchProgress(card,paths,dsOnly,skipRomMd5);
                 np3d::Prepared prepared;
                 if (paths.empty()) {
                     prepared.directory="sd:/nitro-patcher/runtime/original";
@@ -218,9 +219,10 @@ int main(int argc,char** argv) {
                     prepared.rom=std::make_shared<np3d::Map>(prepared.directory+"/map.bin",payload,card,true);
                     prepared.rom->append(np3d::Kind::Card,0,card->size);
                     prepared.rom->finish();payload->sync();
-                } else prepared=np3d::prepare(card,paths,"sd:/nitro-patcher",dsOnly);
+                } else prepared=np3d::prepare(card,paths,"sd:/nitro-patcher",dsOnly,skipRomMd5);
                 error=prepared.error;reused=prepared.reused;mismatch=prepared.mismatch;
                 if (error==np3d::DsModeDeltaError) error=ui::tr(ui::Text::DSModeXdelta);
+                if (error==np3d::DsModeMd5Error) error=ui::tr(ui::Text::DSModeMd5Required);
                 if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel,ui::apPatchEnabled());finishPatchProgress(reused);}
                 else np3d::setProgressHandler(nullptr);
             }

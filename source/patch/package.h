@@ -21,6 +21,7 @@ struct Package {
     ~Package();
     bool has(const std::string& name) const;
     bool needsMd5() const;
+    bool hasPreprocessing() const;
     SourcePtr delta(const std::string& name, SourcePtr source, const std::string& label);
     std::vector<uint8_t> bytes(const std::string& name);
     SourcePtr replace(const std::string& name, SourcePtr source);

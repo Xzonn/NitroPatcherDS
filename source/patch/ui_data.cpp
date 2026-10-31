@@ -133,6 +133,11 @@ Settings loadSettings(const std::string& root) {
         require(cJSON_IsBool(game), "Invalid game anti-piracy setting");
         settings.apPatch[game->string] = cJSON_IsTrue(game);
     }
+    auto skipRomMd5 = cJSON_GetObjectItemCaseSensitive(json.get(), "skipRomMd5");
+    for (auto game = skipRomMd5 ? skipRomMd5->child : nullptr; game; game = game->next) {
+        require(cJSON_IsBool(game), "Invalid game ROM MD5 setting");
+        settings.skipRomMd5[game->string] = cJSON_IsTrue(game);
+    }
     return settings;
 }
 
@@ -148,6 +153,8 @@ void saveSettings(const std::string& root, const Settings& settings) {
     }
     auto apPatch = cJSON_AddObjectToObject(json.get(), "apPatch");
     for (const auto& game : settings.apPatch) cJSON_AddBoolToObject(apPatch, game.first.c_str(), game.second);
+    auto skipRomMd5 = cJSON_AddObjectToObject(json.get(), "skipRomMd5");
+    for (const auto& game : settings.skipRomMd5) cJSON_AddBoolToObject(skipRomMd5, game.first.c_str(), game.second);
     char* data = cJSON_PrintUnformatted(json.get());
     require(data, "Cannot serialize settings");
     std::string path = root + "/config/settings.json";

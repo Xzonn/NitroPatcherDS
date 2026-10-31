@@ -15,7 +15,7 @@ int64_t PreparationWork::remaining(uint64_t elapsed) const {
     return std::max<uint64_t>(1,(size-completed)*elapsed/completed);
 }
 
-void PreparationPlan::initialize(SourcePtr source,const std::vector<std::string>& paths,uint32_t launchSize,bool reused,bool dsOnly) {
+void PreparationPlan::initialize(SourcePtr source,const std::vector<std::string>& paths,uint32_t launchSize,bool reused,bool dsOnly,bool skipRomMd5) {
     *this={};
     launch.size=launchSize;finish.size=1;
     if (reused) {
@@ -46,7 +46,7 @@ void PreparationPlan::initialize(SourcePtr source,const std::vector<std::string>
         }
         item.files.size=item.layout.size=fileCount;
         Package package(path);
-        if (!dsOnly && patches.size()>1 && package.needsMd5()) item.verify.size=source->size;
+        if ((!skipRomMd5 || package.hasPreprocessing()) && patches.size()>1 && package.needsMd5()) item.verify.size=source->size;
         if (!dsOnly && package.metadata.formatVersion==2 && header->unitcode==2)
             item.dsi.size=uint64_t(header->digest_ntr_size)+uint32_t(header->digest_twl_size)
                 +uint64_t(header->arm9_size)*2+uint32_t(header->arm7_size)
@@ -56,7 +56,8 @@ void PreparationPlan::initialize(SourcePtr source,const std::vector<std::string>
             require(mz_zip_reader_file_stat(&package.archive,member.second.index,&info),"Cannot read XZP directory");
             const auto& name=member.first;
             if (name=="readme.md" || name=="readme.txt") continue;
-            if (dsOnly && (name=="md5.txt" || name=="arm9i.bin" || name=="arm7i.bin"
+            if (skipRomMd5 && name=="md5.txt") continue;
+            if (dsOnly && (name=="arm9i.bin" || name=="arm7i.bin"
                 || name=="xdelta/arm9i.bin" || name=="xdelta/arm7i.bin")) continue;
             item.extraction[name].size=info.m_uncomp_size;
             if (name.compare(0,7,"xdelta/")==0) {
