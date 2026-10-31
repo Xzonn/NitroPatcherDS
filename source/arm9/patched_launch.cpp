@@ -39,6 +39,13 @@ void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, ui
     makeDirectory("sd:/nitro-patcher/config");
     makeDirectory("sd:/nitro-patcher/runtime");
     writeResource("bootstrap.nds", "sd:/nitro-patcher/runtime/bootstrap.nds");
+    if (consoleModel >= 2) {
+        makeDirectory("sd:/nitro-patcher/runtime/bootstrap");
+        const uint32_t frontendId[] = {0x4e503344, 0x00030004};
+        Disk frontend("sd:/nitro-patcher/runtime/bootstrap/srFrontendId.bin", "wb");
+        frontend.write(0, frontendId, sizeof(frontendId));
+        frontend.sync();
+    }
     Np3dLaunch launch = {};
     launch.magic = NP3D_LAUNCH_MAGIC;
     launch.version = 2;
