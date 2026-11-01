@@ -56,6 +56,20 @@ XZP packages can be used directly without extracting them. ZIP packages must fol
 
 Check that your cartridge matches the game region and revision required by the patch.
 
+### DSi-enhanced games on NDS / DS Lite
+
+NDS and DS Lite can run the DS portion of DSi-enhanced games such as Pokémon Black, White, Black 2 and White 2. When preparing an XZP or ZIP patch, the app displays a DS mode notice and processes the DS files and overlays while preserving cartridge save access. DSi-exclusive games and DSiWare are unsupported.
+
+An NDS cannot read the complete DSi region, so **Skip ROM MD5** is enabled by default for these games. You still need a patch for your cartridge's region and revision. If you disable this option, use a cache prepared with ROM MD5 verification on a 3DS or DSi.
+
+Whole-ROM `.xdelta` patches and XZP or ZIP packages that include whole-ROM preprocessing for these games must be prepared on a 3DS or DSi:
+
+1. On the 3DS or DSi, use the same cartridge, select the same patch files in the same order, and complete preparation.
+2. Turn off the console and copy the matching cartridge and patch combination directory under `nitro-patcher/cache/` to the same location on the NDS storage card. To create a verified cache, disable **Skip ROM MD5** on the 3DS or DSi before preparing it.
+3. On the NDS, select the same patches in the same order and press START to reuse the cache and launch in DS mode.
+
+Caches prepared locally for the DS portion are stored separately from complete caches. To play in DSi mode on a 3DS or DSi, prepare a complete cache on that console.
+
 ## Selecting patches and starting a game
 
 The first time you open the app, choose an interface language. Move up or down to preview each language, then press A to confirm.
@@ -78,7 +92,7 @@ Patches are applied in the order you select them. The numbers `[1]`, `[2]` and s
 
 Follow the patch authors' instructions when combining patches. For example, if a modification requires a translated version of the game, select the translation patch first, followed by that modification.
 
-You can combine multiple patches. Each patch uses the preceding result as its input, including for its MD5 requirement and preprocessing. An incompatible order stops preparation and displays an error.
+You can combine multiple patches. Each patch uses the preceding result as its input. When ROM MD5 verification is enabled, its MD5 requirement is checked against that result; preprocessing also uses that result. An incompatible order may cause a preparation error. Follow the patch authors' instructions.
 
 ## Buttons and touch controls
 
@@ -96,12 +110,23 @@ You can also tap list items and action labels on the bottom screen. If a patch f
 
 Patch information comes from the package itself. The app indicates when a patch has no metadata or description.
 
+### Returning from a game
+
+During a patched game launched through NitroPatcherDS, hold L + R + Down + B for about two seconds to return to NitroPatcherDS. Save your progress in the game first.
+
+On NDS / DS Lite, keep the flashcard inserted. After returning, follow the reinsertion prompt: remove and reinsert the game cartridge, then press A to read it.
+
+On 3DS / DSi, this shortcut is unavailable when starting the original game without patches. On NDS / DS Lite, it also works without patches.
+
 ## Menu
 
+- **Current game AP patches**: Enable or disable nds-bootstrap's built-in anti-piracy patches. Enabled by default and saved per game. Change this setting if the patch author asks you to disable built-in AP fixes.
+- **Skip ROM MD5**: Skip the `md5.txt` match requirement when preparing XZP or ZIP packages. Saved per game and disabled by default, except for DSi-enhanced games on NDS / DS Lite. ZIP and xdelta integrity checks remain active. If whole-ROM preprocessing needs an MD5 to select its delta file, the app still calculates it.
 - **Start original**: Launch the current cartridge without applying patches.
 - **Read another Game Card**: Return to the cartridge prompt. Remove and reinsert your cartridge, then press A to read it.
 - **Environment report**: Create a report about the console and SD card to help diagnose problems.
 - **Interface language**: Multiple languages are supported, including Simplified Chinese, Traditional Chinese, Japanese, English and Korean. Press A to save your choice, or B to restore the previous language.
+- **Repair memory card**: Check allocation chains, FAT copies and free-space information across the storage card. If the active FAT passes inspection and repairable differences exist, press A to back up filesystem metadata, synchronize FAT copies and update free-space information. Backups are stored under `nitro-patcher/repair/`; the screen shows the full path. Cross-linked, lost or invalid chains, or uncertainty about the correct FAT copy, require backup and repair on a computer. Keep the power on and leave the storage card inserted while repair writes are in progress.
 - **About**: View the app version, author and open source projects used. Press A to read the licenses.
 
 ## Cache and save data
@@ -110,7 +135,9 @@ After preparation, the cache is stored in `nitro-patcher/cache/` on the SD card.
 
 To free up space, turn off the console and delete `nitro-patcher/cache/`. The app will prepare the files again the next time you launch a patched game. Save data is stored on the cartridge, so deleting the patch cache does not delete your saves.
 
-Your language and patch selections are stored in `nitro-patcher/config/settings.json`.
+Your language, patch selections and per-game AP and ROM MD5 settings are stored in `nitro-patcher/config/settings.json`.
+
+For patches containing `md5.txt`, disabling **Skip ROM MD5** causes caches prepared without verification to be rebuilt and checked. DSi-enhanced games on NDS require a complete, verified cache prepared on a 3DS or DSi when this option is disabled.
 
 When an app update changes the preparation rules, an older cache is rebuilt automatically when that patch combination is used. Incomplete caches left by failed or interrupted preparation cannot launch games. Select the patches and start again to retry.
 
