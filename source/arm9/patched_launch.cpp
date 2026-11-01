@@ -33,7 +33,7 @@ GameLaunchSettings gameLaunchSettings(bool dsiHardware, uint8_t unitCode, const 
     return {dsiHardware && unitCode == 2 && boost, boost, guiLanguage};
 }
 
-void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, uint32_t chipId, int consoleModel, bool apPatch)
+void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, uint32_t chipId, int consoleModel, bool apPatch, const std::string& appPath)
 {
     using namespace np3d;
     makeDirectory("sd:/nitro-patcher/config");
@@ -46,9 +46,12 @@ void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, ui
         frontend.write(0, frontendId, sizeof(frontendId));
         frontend.sync();
     }
-    Np3dLaunch launch = {};
+    Np3dLaunchFile launchFile = {};
+    auto& launch = launchFile.rom;
     launch.magic = NP3D_LAUNCH_MAGIC;
-    launch.version = 2;
+    launch.version = NP3D_LAUNCH_VERSION;
+    require(appPath.size() + 2 < sizeof(launchFile.returnPath), "App path is too long for returning from a game.");
+    std::memcpy(launchFile.returnPath, appPath.c_str(), appPath.size() + 1);
     launch.romSize = prepared.rom->size;
     launch.cardSize = card->size;
     launch.cardId = chipId;
@@ -97,11 +100,11 @@ void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, ui
     launch.prefixCluster = cluster(prepared.directory + "/card-prefix.bin");
     {
         Disk descriptor("sd:/nitro-patcher/config/launch.bin", "wb");
-        descriptor.write(0, &launch, sizeof(launch));
+        descriptor.write(0, &launchFile, sizeof(launchFile));
         descriptor.sync();
     }
     const std::string configuration =
-        "[NDS-BOOTSTRAP]\nNDS_PATH=np3d:/rom.nds\nSAVE_RELOCATION=0\nDSI_MODE=" + std::to_string(settings.dsiMode)
+        "[NDS-BOOTSTRAP]\nNDS_PATH=np3d:/rom.nds\nQUIT_PATH=" + appPath + "\nSAVE_RELOCATION=0\nDSI_MODE=" + std::to_string(settings.dsiMode)
         + "\nCONSOLE_MODEL=" + std::to_string(consoleModel) + "\nAP_PATCH=" + std::to_string(apPatch)
         + "\nGUI_LANGUAGE=" + settings.guiLanguage + "\nBOOST_CPU=" + std::to_string(settings.boostCpu)
         + "\nBOOST_VRAM=0\nASYNC_CARD_READ=-1\nCARD_READ_DMA=-1\nDEBUG=0\nLOGGING=0\n";

@@ -115,9 +115,11 @@ int main(int argc,char** argv) {
     np3d::makeDirectory("sd:/nitro-patcher");
     ui::initialize();
     ui::chooseInitialLanguage();
+    bool returned=!isDSiMode() && argc>1 && std::strcmp(argv[1],"--return")==0;
+    if (returned) ui::noCard(false,true);
 
     alignas(4) unsigned char header[0x200];
-    bool hasCard=false, cardInterfaceReady=false, reinsert=false, readCard=true;
+    bool hasCard=false, cardInterfaceReady=false, reinsert=returned, readCard=!returned;
     const auto* gameHeader=reinterpret_cast<const sNDSHeader*>(header);
     np3d::SourcePtr persistentCard;
     uint32_t persistentChipId=0;
@@ -223,7 +225,7 @@ int main(int argc,char** argv) {
                 error=prepared.error;reused=prepared.reused;mismatch=prepared.mismatch;
                 if (error==np3d::DsModeDeltaError) error=ui::tr(ui::Text::DSModeXdelta);
                 if (error==np3d::DsModeMd5Error) error=ui::tr(ui::Text::DSModeMd5Required);
-                if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel,ui::apPatchEnabled());finishPatchProgress(reused);}
+                if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel,ui::apPatchEnabled(),filename);finishPatchProgress(reused);}
                 else np3d::setProgressHandler(nullptr);
             }
             np3d::finishPreparationLog(reused,error);
