@@ -658,5 +658,17 @@
     "key": "patch_error.ds_mode_md5_required",
     "original": "NDS cannot verify the full ROM MD5 of a DSi-enhanced cartridge. Enable skipping ROM MD5, or prepare a verified cache on a 3DS or DSi.",
     "translation": "NDS cannot verify the full ROM MD5 of a DSi-enhanced cartridge. Enable skipping ROM MD5, or prepare a verified cache on a 3DS or DSi."
+  },
+  {
+    "index": 111,
+    "key": "menu.limit_open_files",
+    "original": "Max files open at once: {limit}",
+    "translation": "Max files open at once: {limit}"
+  },
+  {
+    "index": 112,
+    "key": "common.unlimited",
+    "original": "Unlimited",
+    "translation": "Unlimited"
   }
 ]

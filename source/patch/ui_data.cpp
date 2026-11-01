@@ -138,6 +138,11 @@ Settings loadSettings(const std::string& root) {
         require(cJSON_IsBool(game), "Invalid game ROM MD5 setting");
         settings.skipRomMd5[game->string] = cJSON_IsTrue(game);
     }
+    auto limitOpenFiles = cJSON_GetObjectItemCaseSensitive(json.get(), "limitOpenFiles");
+    for (auto game = limitOpenFiles ? limitOpenFiles->child : nullptr; game; game = game->next) {
+        require(cJSON_IsBool(game), "Invalid game open file limit setting");
+        settings.limitOpenFiles[game->string] = cJSON_IsTrue(game);
+    }
     return settings;
 }
 
@@ -155,6 +160,8 @@ void saveSettings(const std::string& root, const Settings& settings) {
     for (const auto& game : settings.apPatch) cJSON_AddBoolToObject(apPatch, game.first.c_str(), game.second);
     auto skipRomMd5 = cJSON_AddObjectToObject(json.get(), "skipRomMd5");
     for (const auto& game : settings.skipRomMd5) cJSON_AddBoolToObject(skipRomMd5, game.first.c_str(), game.second);
+    auto limitOpenFiles = cJSON_AddObjectToObject(json.get(), "limitOpenFiles");
+    for (const auto& game : settings.limitOpenFiles) cJSON_AddBoolToObject(limitOpenFiles, game.first.c_str(), game.second);
     char* data = cJSON_PrintUnformatted(json.get());
     require(data, "Cannot serialize settings");
     std::string path = root + "/config/settings.json";

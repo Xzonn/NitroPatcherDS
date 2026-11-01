@@ -14,9 +14,9 @@ constexpr const char* Root = "sd:/nitro-patcher";
 constexpr uint16_t White = 0xffff, Black = 0x8000, Gray = 0xe739;
 constexpr int Visible = 6;
 enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading, Storage, Confirm };
-enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage, ApPatch, SkipRomMd5 };
-constexpr Text MenuLabels[] = {Text::ApPatch,Text::SkipRomMd5,Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
-constexpr Command MenuCommands[] = {Command::ApPatch,Command::SkipRomMd5,Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
+enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage, ApPatch, SkipRomMd5, LimitOpenFiles };
+constexpr Text MenuLabels[] = {Text::ApPatch,Text::SkipRomMd5,Text::LimitOpenFiles,Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
+constexpr Command MenuCommands[] = {Command::ApPatch,Command::SkipRomMd5,Command::LimitOpenFiles,Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
 constexpr int MenuCount = sizeof(MenuCommands)/sizeof(MenuCommands[0]);
 constexpr const char* Licenses[] = {"NitroPatcherDS.txt", "md4c.txt", "fmt.txt", "Gulim-OFL.txt", "Gulim-AUTHORS.txt", "liblzma.txt"};
 constexpr int LicenseCount = sizeof(Licenses)/sizeof(Licenses[0]);
@@ -247,7 +247,8 @@ void render() {
             int index=state.top+row,y=32+row*20;
             if (state.focus==index) fill(1,8,y,240,20,Gray);
             std::string label=MenuCommands[index]==Command::ApPatch?format(Text::ApPatch,fmt::arg("state",tr(apPatchEnabled()?Text::Enabled:Text::Disabled)))
-                :MenuCommands[index]==Command::SkipRomMd5?format(Text::SkipRomMd5,fmt::arg("state",tr(skipRomMd5Enabled()?Text::Enabled:Text::Disabled))):tr(MenuLabels[index]);
+                :MenuCommands[index]==Command::SkipRomMd5?format(Text::SkipRomMd5,fmt::arg("state",tr(skipRomMd5Enabled()?Text::Enabled:Text::Disabled)))
+                :MenuCommands[index]==Command::LimitOpenFiles?format(Text::LimitOpenFiles,fmt::arg("limit",limitOpenFilesEnabled()?"16":tr(Text::Unlimited))):tr(MenuLabels[index]);
             text(1,label,16,y+4); hits.push_back({8,y,240,20,MenuCommands[index],0});
         }
         backKey(); break;
@@ -380,6 +381,8 @@ void command(Command value,int argument=0) {
         if (state.hasCard) {state.settings.apPatch[state.gameKey]=!apPatchEnabled();save();} break;
     case Command::SkipRomMd5:
         if (state.hasCard) {state.settings.skipRomMd5[state.gameKey]=!skipRomMd5Enabled();save();} break;
+    case Command::LimitOpenFiles:
+        if (state.hasCard) {state.settings.limitOpenFiles[state.gameKey]=!limitOpenFilesEnabled();save();} break;
     case Command::Report: pending=Action::Report; break;
     case Command::RepairStorage: pending=Action::RepairStorage;break;
     case Command::ReadCard: pending=Action::ReadCard; break;
@@ -521,6 +524,11 @@ bool skipRomMd5Enabled() {
     if (!state.hasCard) return false;
     auto found=state.settings.skipRomMd5.find(state.gameKey);
     return found==state.settings.skipRomMd5.end()?state.defaultSkipRomMd5:found->second;
+}
+bool limitOpenFilesEnabled() {
+    if (!state.hasCard) return false;
+    auto found=state.settings.limitOpenFiles.find(state.gameKey);
+    return found!=state.settings.limitOpenFiles.end() && found->second;
 }
 void preparing() { go(Page::Progress);state.patchNumber=1;state.completed=state.total=0;state.elapsed=0;state.preparation={};state.stage=tr(Text::Working);state.progressDetail.clear();render(); }
 void progress(const char* stage,uint32_t completed,uint32_t total,const char* detail,uint64_t elapsed,const PreparationProgress& preparation) {

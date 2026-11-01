@@ -34,6 +34,7 @@ inline void patchRequire(bool condition, const char* message) { if (!condition) 
 
 using ProgressHandler = void (*)(const char*, uint32_t, uint32_t, bool, const char*);
 void setProgressHandler(ProgressHandler handler);
+void setMapFileLimit(bool enabled);
 void progress(const char* stage, uint32_t completed, uint32_t total, bool bytes = false, const char* detail = "");
 void beginPreparationLog(const std::string& root, const std::string& patch);
 void finishPreparationLog(bool reused, const std::string& error = "");
@@ -48,12 +49,14 @@ struct Source {
 using SourcePtr = std::shared_ptr<Source>;
 
 struct Disk final : Source {
-    FILE* handle;
+    FILE* handle = nullptr;
     std::string path;
     uint32_t position = 0;
-    bool reading = false, writing = false;
-    Disk(const std::string& path, const char* mode = "rb");
+    bool reading = false, writing = false, pooled = false, writable = false;
+    Disk(const std::string& path, const char* mode = "rb", bool pooled = false);
     ~Disk();
+    void open(const char* mode);
+    void close();
     void read(uint32_t offset, void* output, uint32_t length) override;
     void write(uint32_t offset, const void* input, uint32_t length);
     void sync();

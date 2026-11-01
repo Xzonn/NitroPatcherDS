@@ -194,6 +194,7 @@ int main(int argc,char** argv) {
             auto paths=action==ui::Action::Launch?ui::selectedPatches():std::vector<std::string>();
             bool dsOnly=!isDSiMode() && gameHeader->unitCode==2;
             bool skipRomMd5=ui::skipRomMd5Enabled();
+            np3d::setMapFileLimit(ui::limitOpenFilesEnabled());
             if (dsOnly && std::any_of(paths.begin(),paths.end(),[](const std::string& path){return !np3d::isDeltaPatch(path);})
                 && !ui::confirm(ui::tr(ui::Text::DSModeNotice))) continue;
             std::string description;

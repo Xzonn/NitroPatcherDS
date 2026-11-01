@@ -658,5 +658,17 @@
     "key": "patch_error.ds_mode_md5_required",
     "original": "NDS cannot verify the full ROM MD5 of a DSi-enhanced cartridge. Enable skipping ROM MD5, or prepare a verified cache on a 3DS or DSi.",
     "translation": "NDS에서는 DSi 확장 게임 카드의 전체 ROM MD5를 검사할 수 없습니다. ‘ROM MD5 검사 생략’을 켜거나 3DS／DSi에서 검사가 완료된 캐시를 준비해 주세요."
+  },
+  {
+    "index": 111,
+    "key": "menu.limit_open_files",
+    "original": "Max files open at once: {limit}",
+    "translation": "동시에 여는 파일 수 제한: {limit}"
+  },
+  {
+    "index": 112,
+    "key": "common.unlimited",
+    "original": "Unlimited",
+    "translation": "제한 없음"
   }
 ]

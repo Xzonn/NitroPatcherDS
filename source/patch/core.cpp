@@ -143,10 +143,17 @@ void patchRequire(bool condition, const std::string& message) {
     if (!condition) throw PatchError{message};
 }
 
-Disk::Disk(const std::string& name, const char* mode) : path(name) {
+struct FileSlot { Disk* owner = nullptr; uint32_t age = 0; };
+static std::array<FileSlot, 16> openTables;
+static uint32_t fileAge;
+static bool mapFileLimit;
+
+void setMapFileLimit(bool enabled) { mapFileLimit = enabled; }
+
+Disk::Disk(const std::string& name, const char* mode, bool limited)
+    : path(name), pooled(limited), writable(mode[0] != 'r' || std::strchr(mode, '+')) {
     NP3D_PREPARE_LOG("FILE open begin mode=" + std::string(mode) + " path=" + path);
-    handle = std::fopen(path.c_str(), mode);
-    require(handle, "Cannot open " + path);
+    open(mode);
     require(std::fseek(handle, 0, SEEK_END) == 0, "Cannot seek " + path);
     long length = std::ftell(handle);
     require(length >= 0 && uint64_t(length) <= 0x40000000, "Invalid file size: " + path);
@@ -156,13 +163,43 @@ Disk::Disk(const std::string& name, const char* mode) : path(name) {
 }
 
 Disk::~Disk() {
+    close();
+}
+
+void Disk::open(const char* mode) {
+    if (pooled) {
+        FileSlot* slot = nullptr;
+        for (auto& item : openTables) {
+            if (item.owner == this) { slot = &item; break; }
+            if (!item.owner) slot = &item;
+        }
+        if (!slot) {
+            slot = &openTables[0];
+            for (auto& item : openTables) if (item.age < slot->age) slot = &item;
+            slot->owner->close();
+        }
+        slot->owner = this;
+        slot->age = ++fileAge;
+    }
+    if (handle) return;
+    handle = std::fopen(path.c_str(), mode);
+    require(handle, "Cannot open " + path);
+    position = 0;
+    reading = writing = false;
+}
+
+void Disk::close() {
+    if (!handle) return;
     NP3D_PREPARE_LOG("FILE close begin " + path);
     require(std::fclose(handle) == 0, "Cannot close " + path);
+    handle = nullptr;
+    if (pooled) for (auto& item : openTables) if (item.owner == this) item.owner = nullptr;
     NP3D_PREPARE_LOG("FILE close done " + path);
 }
 
 void Disk::read(uint32_t offset, void* output, uint32_t length) {
     if (!(offset <= size && length <= size - offset)) fail("Read outside " + path);
+    if (pooled) open(writable ? "r+b" : "rb");
     if ((position != offset || writing) && std::fseek(handle, offset, SEEK_SET) != 0) fail("Cannot seek " + path);
     if (std::fread(output, 1, length, handle) != length) fail("Cannot read " + path);
     position = offset + length;
@@ -172,6 +209,7 @@ void Disk::read(uint32_t offset, void* output, uint32_t length) {
 
 void Disk::write(uint32_t offset, const void* input, uint32_t length) {
     require(offset <= 0x40000000 && length <= 0x40000000 - offset, "Output exceeds ROM size limit");
+    if (pooled) open(writable ? "r+b" : "rb");
     if ((position != offset || reading) && std::fseek(handle, offset, SEEK_SET) != 0) fail("Cannot seek " + path);
     if (std::fwrite(input, 1, length, handle) != length) fail("Cannot write " + path);
     position = offset + length;
@@ -182,13 +220,14 @@ void Disk::write(uint32_t offset, const void* input, uint32_t length) {
 
 void Disk::sync() {
     NP3D_PREPARE_LOG("FILE sync begin " + path);
+    if (pooled) open(writable ? "r+b" : "rb");
     flush();
     require(fsync(fileno(handle)) == 0, "Cannot sync " + path);
     NP3D_PREPARE_LOG("FILE sync done " + path);
 }
 
 void Disk::flush() {
-    if (std::fflush(handle) != 0) fail("Cannot flush " + path);
+    if (handle && std::fflush(handle) != 0) fail("Cannot flush " + path);
 }
 
 Cached::Cached(SourcePtr source) : input(source) { size = input->size; }
@@ -229,7 +268,7 @@ void Slice::read(uint32_t offset, void* output, uint32_t length) {
 }
 
 Map::Map(const std::string& path, std::shared_ptr<Disk> data, SourcePtr original, bool create)
-    : table(std::make_shared<Disk>(path, create ? "w+b" : "rb")), payload(data), card(original) {
+    : table(std::make_shared<Disk>(path, create ? "w+b" : "rb", mapFileLimit)), payload(data), card(original) {
     uint32_t header[8] = {0x4433504e, 0x0050414d, FormatVersion, RulesVersion, 0, 0, 16, 0};
     if (create) {
         table->write(0, header, sizeof(header));
