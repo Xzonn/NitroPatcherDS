@@ -92,7 +92,7 @@ int main(int argc,char** argv) {
     np3d::require(!isDSiMode() && (dldiGetInternal()->features & FEATURE_SLOT_GBA),
         "Launch this build in DS mode from a Slot-2 flashcard.");
     np3d::require(fatMountSimple("sd",dldiGetInternal()),"Unable to access Slot-2 storage.");
-    std::string filename=argc>0?np3d::appPath(argc,argv):"sd:/BOOT.NDS";
+    std::string filename=np3d::appPath(argc,argv,__NDSHeader);
     np3d::require(bootFSInit(filename.c_str()),"Cannot open app resources.");
 #else
     if (!isDSiMode()) stopWithMessage("Launch in DSi mode on a DSi or 3DS.");

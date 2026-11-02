@@ -30,11 +30,13 @@ You can also select `nitro-patcher/app/NitroPatcherDSi.nds` in TWiLight Menu++. 
 
 You need a DS-mode-compatible SuperCard miniSD running SuperFW, and a console with FlashMe configured to boot Slot-2 in DS mode.
 
-1. Extract `NitroPatcherDS.zip` and copy `BOOT.NDS` and the `nitro-patcher` folder to the root of the SuperCard's storage card. Back up any existing `BOOT.NDS` first. `BOOT.NDS` contains the app, fonts and translations. Keep its name and location.
+1. Extract `NitroPatcherDS.zip` and copy `BOOT.NDS` and the `nitro-patcher` folder to the root of the SuperCard's storage card. Back up any existing `BOOT.NDS` first.
 2. Put your patches in `nitro-patcher/patches/`.
 3. Leave Slot-1 empty and use FlashMe to start the SuperCard in DS mode. SuperFW loads `BOOT.NDS`.
 4. Select your language on first launch, then insert the matching retail NDS cartridge when the cartridge prompt appears and press A to read it. If no cartridge is found, check that it is inserted and press A again.
 5. Select your patches and press START to prepare and launch the game. Keep both cartridges inserted while playing.
+
+To use alongside TWiLight Menu++, keep its `BOOT.NDS`, rename NitroPatcherDS's `BOOT.NDS` to `NitroPatcherDS.nds`, and launch that file from TWiLight Menu++.
 
 If Slot-1 already contained a cartridge at startup and pressing A does not identify it, remove and reinsert the game cartridge, then press A again.
 

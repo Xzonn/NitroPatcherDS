@@ -2,5 +2,5 @@
 #include <string>
 
 namespace np3d {
-std::string appPath(int argc, char** argv);
+std::string appPath(int argc, char** argv, const void* header = nullptr);
 }

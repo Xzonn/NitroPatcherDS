@@ -30,11 +30,13 @@ NitroPatcherDS 可以在 3DS／2DS、DSi／DSi LL（XL），以及使用 SuperCa
 
 需要支持 DS 模式的 SuperCard miniSD、SuperFW，以及能够通过 FlashMe 进入 DS 模式的主机。
 
-1. 解压 `NitroPatcherDS.zip`，将 `BOOT.NDS` 和 `nitro-patcher` 文件夹复制到 SuperCard 存储卡根目录。已有 `BOOT.NDS` 时先备份原文件。此包的 `BOOT.NDS` 是程序本体，字体和翻译包含在其中，请保留文件名称与位置。
+1. 解压 `NitroPatcherDS.zip`，将 `BOOT.NDS` 和 `nitro-patcher` 文件夹复制到 SuperCard 存储卡根目录。已有 `BOOT.NDS` 时先备份原文件。
 2. 将补丁文件放入 `nitro-patcher/patches/` 文件夹。
 3. 保持 Slot-1 为空，通过 FlashMe 以 DS 模式启动 SuperCard。SuperFW 会加载 `BOOT.NDS`。
 4. 首次运行时选择语言，出现卡带提示后插入对应的正版 NDS 卡带，按 A 识别。没有检测到卡带时，可以插好后再次按 A。
 5. 选择补丁，按 START 准备并启动游戏。运行期间保持 SuperCard 和游戏卡带插入。
+
+与 TWiLight Menu++ 共存时，保留它的 `BOOT.NDS`，将本程序的 `BOOT.NDS` 改名为 `NitroPatcherDS.nds`，再从 TWiLight Menu++ 启动。
 
 如果进入程序时 Slot-1 已有卡带，按 A 后仍然无法识别，请取出并重新插入游戏卡带，再按 A。
 
