@@ -13,10 +13,10 @@ namespace {
 constexpr const char* Root = "sd:/nitro-patcher";
 constexpr uint16_t White = 0xffff, Black = 0x8000, Gray = 0xe739;
 constexpr int Visible = 6;
-enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading, Storage, Confirm };
-enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage, ApPatch, SkipRomMd5, LimitOpenFiles };
-constexpr Text MenuLabels[] = {Text::ApPatch,Text::SkipRomMd5,Text::LimitOpenFiles,Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
-constexpr Command MenuCommands[] = {Command::ApPatch,Command::SkipRomMd5,Command::LimitOpenFiles,Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
+enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading, Storage, Confirm, Cheats, CheatInfo };
+enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage, ApPatch, SkipRomMd5, LimitOpenFiles, Cheats, ToggleCheat, CheatInfo, ClearCheats };
+constexpr Text MenuLabels[] = {Text::Cheats,Text::ApPatch,Text::SkipRomMd5,Text::LimitOpenFiles,Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
+constexpr Command MenuCommands[] = {Command::Cheats,Command::ApPatch,Command::SkipRomMd5,Command::LimitOpenFiles,Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
 constexpr int MenuCount = sizeof(MenuCommands)/sizeof(MenuCommands[0]);
 constexpr const char* Licenses[] = {"NitroPatcherDS.txt", "md4c.txt", "fmt.txt", "Gulim-OFL.txt", "Gulim-AUTHORS.txt", "liblzma.txt"};
 constexpr int LicenseCount = sizeof(Licenses)/sizeof(Licenses[0]);
@@ -35,6 +35,10 @@ struct State {
     PreparationProgress preparation;
     std::string gameKey, detail, stage, progressDetail;
     np3d::Settings settings;
+    std::unique_ptr<np3d::Cheats> cheats;
+    np3d::CheatStatus cheatStatus = np3d::CheatStatus::NotFound;
+    std::vector<size_t> cheatRows;
+    int cheatFolder = -1, cheatFocus = 0, cheatTop = 0;
     np3d::PatchInfo info;
     std::vector<std::string> patches, selected;
     std::vector<std::u16string> lines;
@@ -66,6 +70,11 @@ void useLanguage(int index) {
 }
 
 std::string filename(const std::string& path) { return path.substr(path.find_last_of('/') + 1); }
+std::string cheatKey() {
+    std::string result=state.gameKey;
+    for (const auto& path : state.selected) result+="\n"+filename(path);
+    return result;
+}
 int width(const std::u16string& text) {
     int result = 0;
     for (char16_t character : text) result += font->charWidth(character);
@@ -162,6 +171,15 @@ void upper() {
         text(0,tr("en",Text::SelectLanguage),8,124);
     } else if (state.page==Page::Storage) {
         paragraph(0,tr(state.storageWriting?Text::StorageWriting:Text::StorageNotice),8,42);
+    } else if ((state.page==Page::Cheats || state.page==Page::CheatInfo) && state.cheatStatus==np3d::CheatStatus::Ready) {
+        scrollText(0,state.cheats->gameTitle(),8,40,240,true);
+        text(0,tr(state.cheats->patched?Text::CheatPatched:Text::CheatOriginal),8,64);
+        text(0,format(Text::CheatSelected,fmt::arg("bytes",state.cheats->byteSize()),fmt::arg("limit",isDSiMode()?0x4000:0x1C00)),8,86);
+        if (!state.cheatRows.empty()) {
+            auto index=state.cheatRows[state.focus];
+            scrollText(0,state.cheats->title(index),8,112,240,true);
+            paragraph(0,state.cheats->description(index),8,136);
+        }
     } else if (state.page==Page::PatchInfo) {
         scrollText(0,filename(state.patches[state.homeFocus]),8,34,240,true);
         int y=58;
@@ -253,7 +271,27 @@ void render() {
         }
         backKey(); break;
     }
-    case Page::PatchInfo: case Page::Details: case Page::LicenseText: case Page::Confirm: {
+    case Page::Cheats:
+        heading(tr(Text::Cheats)); range(state.cheatRows.size());
+        if (state.cheatStatus!=np3d::CheatStatus::Ready) paragraph(1,cheatError(state.cheatStatus),8,40);
+        else if (state.cheatRows.empty()) paragraph(1,tr(Text::CheatNotFound),8,40);
+        else for (int row=0;row<Visible && state.top+row<int(state.cheatRows.size());row++) {
+            int index=state.top+row,y=32+row*20;
+            auto item=state.cheatRows[index];
+            if (index==state.focus) fill(1,8,y,240,20,Gray);
+            text(1,state.cheats->folder(item)?">":state.cheats->selected(item)?"[x]":"[ ]",12,y+4);
+            scrollText(1,state.cheats->title(item),36,y+4,208,index==state.focus);
+            hits.push_back({8,y,240,20,Command::ToggleCheat,index});
+        }
+        separator();
+        if (!state.cheatRows.empty()) softkey(hint("A",Text::Select),8,161,132,Command::ToggleCheat,state.focus);
+        softkey(hint("B",Text::Back),148,161,108,Command::Back);
+        if (!state.cheatRows.empty()) {
+            softkey(hint("Y",Text::Info),8,178,76,Command::CheatInfo);
+            softkey(hint("SELECT",Text::CheatClear),90,178,166,Command::ClearCheats);
+        }
+        break;
+    case Page::PatchInfo: case Page::Details: case Page::LicenseText: case Page::Confirm: case Page::CheatInfo: {
         heading(tr(state.page==Page::PatchInfo?Text::Intro:state.page==Page::LicenseText?Text::Licenses:Text::Details));
         for (int index=0;index<7 && state.textTop+index<int(state.lines.size());index++) text16(1,state.lines[state.textTop+index],8,34+index*16);
         if (state.lines.size()>7) {
@@ -331,7 +369,7 @@ void render() {
     case Page::Empty:
         heading(tr(Text::Empty)); paragraph(1,tr(Text::EmptyBody),8,40);
         text(1,"sd:/nitro-patcher/patches/",8,96); separator();
-        softkey(hint("A",Text::Original),8,161,240,Command::Original);
+        softkey(hint("A",Text::Start),8,161,240,Command::Start);
         softkey(hint("X",Text::Menu),8,178,132,Command::Menu); break;
     case Page::NoCard:
         heading(tr(state.cardMissing?Text::NoCard:Text::InsertCard));
@@ -352,8 +390,8 @@ void render() {
 void returnHome() { go(!state.hasCard?Page::NoCard:state.patches.empty()?Page::Empty:Page::Home); }
 void scrollLines(int distance) { state.textTop=std::clamp(state.textTop+distance,0,std::max(0,int(state.lines.size())-7)); }
 void move(int distance,bool page=false) {
-    if (state.page==Page::PatchInfo || state.page==Page::Details || state.page==Page::LicenseText) {scrollLines(distance*(page?7:1));return;}
-    int count=state.page==Page::Language?LanguageCount:state.page==Page::Menu?MenuCount:state.page==Page::Licenses?LicenseCount:state.page==Page::Home?state.patches.size():0;
+    if (state.page==Page::PatchInfo || state.page==Page::Details || state.page==Page::LicenseText || state.page==Page::CheatInfo) {scrollLines(distance*(page?7:1));return;}
+    int count=state.page==Page::Language?LanguageCount:state.page==Page::Menu?MenuCount:state.page==Page::Licenses?LicenseCount:state.page==Page::Cheats?state.cheatRows.size():state.page==Page::Home?state.patches.size():0;
     if (!count) return;
     state.focus=page?std::clamp(state.focus+distance*Visible,0,count-1):(state.focus+distance+count)%count;
     if (page) state.top=std::clamp(state.top+distance*Visible,0,std::max(0,count-Visible));
@@ -364,7 +402,7 @@ void move(int distance,bool page=false) {
 }
 void command(Command value,int argument=0) {
     if (storage::writeBlocked() && (value==Command::Toggle || value==Command::Start ||
-        value==Command::Original || value==Command::Report || value==Command::PickLanguage || value==Command::ApPatch || value==Command::SkipRomMd5)) {
+        value==Command::Original || value==Command::Report || value==Command::PickLanguage || value==Command::ApPatch || value==Command::SkipRomMd5 || value==Command::Cheats)) {
         state.fatal=false;state.mismatch=false;state.detail=tr(Text::StorageIoError);go(Page::Error);return;
     }
     switch (value) {
@@ -377,6 +415,28 @@ void command(Command value,int argument=0) {
     }
     case Command::Start: pending=Action::Launch; break;
     case Command::Original: if (state.hasCard) pending=Action::Original; break;
+    case Command::Cheats: if (state.hasCard) pending=Action::Cheats; break;
+    case Command::ToggleCheat:
+        if (state.cheatRows.empty()) break;
+        state.focus=argument;
+        if (state.cheats->folder(state.cheatRows[argument])) {
+            state.cheatFolder=state.cheatRows[argument];state.cheatFocus=state.focus;state.cheatTop=state.top;
+            state.cheatRows=state.cheats->children(state.cheatFolder);go(Page::Cheats);
+        } else state.cheats->select(state.cheatRows[argument],!state.cheats->selected(state.cheatRows[argument]));
+        state.focusTick=state.ticks;break;
+    case Command::CheatInfo:
+        if (!state.cheatRows.empty()) {
+            auto description=state.cheats->description(state.cheatRows[state.focus]);
+            state.lines=wrap(una::utf8to16u(description.empty()?tr(Text::CheatNoDescription):description),228);
+            state.page=Page::CheatInfo;state.textTop=0;
+        }
+        break;
+    case Command::ClearCheats:
+        for (auto index : state.cheats->children()) {
+            if (state.cheats->folder(index)) for (auto child : state.cheats->children(index)) state.cheats->select(child,false);
+            else state.cheats->select(index,false);
+        }
+        break;
     case Command::ApPatch:
         if (state.hasCard) {state.settings.apPatch[state.gameKey]=!apPatchEnabled();save();} break;
     case Command::SkipRomMd5:
@@ -410,7 +470,17 @@ void command(Command value,int argument=0) {
     case Command::Details: state.lines=wrap(una::utf8to16u(state.detail),228);go(Page::Details);break;
     case Command::Back:
         if (state.first || state.fatal) break;
-        if (state.page==Page::Language) {useLanguage(state.languageBefore);go(state.languageFrom);}
+        if (state.page==Page::CheatInfo) {state.lines.clear();state.page=Page::Cheats;}
+        else if (state.page==Page::Cheats) {
+            if (state.cheatFolder>=0) {
+                state.cheatRows=state.cheats->children();state.cheatFolder=-1;
+                state.focus=state.cheatFocus;state.top=state.cheatTop;
+            } else {
+                if (state.cheatStatus==np3d::CheatStatus::Ready) {state.settings.cheats[cheatKey()]=state.cheats->selection();save();}
+                state.cheats.reset();state.cheatRows.clear();go(Page::Menu);
+            }
+        }
+        else if (state.page==Page::Language) {useLanguage(state.languageBefore);go(state.languageFrom);}
         else if (state.page==Page::PatchInfo) {state.page=Page::Home;state.focus=state.homeFocus;state.top=state.homeTop;state.focusTick=state.ticks;}
         else if (state.page==Page::Details) go(Page::Error);
         else if (state.page==Page::LicenseText) {state.lines.clear();go(Page::Licenses);state.focus=state.licenseFocus;state.top=std::max(0,state.focus-Visible+1);}
@@ -458,6 +528,7 @@ void chooseInitialLanguage() {
     go(Page::Loading);render();
 }
 bool setGame(np3d::SourcePtr card,const sNDSHeader& header) {
+    state.cheats.reset();state.cheatRows.clear();
     state.hasCard=true;
     state.hasBanner=false;
     char identity[32];std::snprintf(identity,sizeof(identity),"%.4s-%04x-%02x",header.gameCode,header.headerCRC16,header.romversion);
@@ -480,6 +551,7 @@ bool setGame(np3d::SourcePtr card,const sNDSHeader& header) {
     returnHome();render();return true;
 }
 void noCard(bool missing,bool reinsert) {
+    state.cheats.reset();state.cheatRows.clear();
     state.hasCard=false;state.hasBanner=false;state.gameKey.clear();state.selected.clear();state.info={};
     state.cardMissing=missing;state.cardReinsert=reinsert;go(Page::NoCard);render();
 }
@@ -493,13 +565,16 @@ Action update() {
     if (down&KEY_B) {command(Command::Back);changed=true;}
     else if ((down&(KEY_X|KEY_SELECT)) && (state.page==Page::Home || state.page==Page::Empty || state.page==Page::NoCard)) {command(Command::Menu);changed=true;}
     else if ((down&KEY_Y) && state.page==Page::Home) {command(Command::Info);changed=true;}
+    else if ((down&KEY_Y) && state.page==Page::Cheats) {command(Command::CheatInfo);changed=true;}
+    else if ((down&KEY_SELECT) && state.page==Page::Cheats && state.cheatStatus==np3d::CheatStatus::Ready) {command(Command::ClearCheats);changed=true;}
     else if ((down&KEY_START) && (state.page==Page::Home || state.page==Page::Empty)) {command(Command::Start);changed=true;}
     else if (down&KEY_A) {
         if (state.page==Page::Home) command(Command::Toggle,state.focus);
         else if (state.page==Page::Language) command(Command::PickLanguage,state.focus);
         else if (state.page==Page::Menu) {
             command(MenuCommands[state.focus]);
-        } else if (state.page==Page::Empty) command(Command::Original);
+        } else if (state.page==Page::Cheats) command(Command::ToggleCheat,state.focus);
+        else if (state.page==Page::Empty) command(Command::Start);
         else if (state.page==Page::NoCard) command(Command::ReadCard);
         else if (state.page==Page::About) command(Command::Licenses);
         else if (state.page==Page::Licenses) command(Command::ReadLicense,state.focus);
@@ -512,10 +587,33 @@ Action update() {
             Command value=hit.command;int argument=hit.argument;command(value,argument);changed=true;break;
         }
     }
-    if (changed || ((state.page==Page::Home || state.page==Page::PatchInfo || state.page==Page::Licenses || state.page==Page::LicenseText) && state.ticks%4==0)) render();
+    if (changed || ((state.page==Page::Home || state.page==Page::PatchInfo || state.page==Page::Licenses || state.page==Page::LicenseText || state.page==Page::Cheats || state.page==Page::CheatInfo) && state.ticks%4==0)) render();
     return pending;
 }
 const std::vector<std::string>& selectedPatches() { return state.selected; }
+const np3d::CheatSelection& selectedCheats() {
+    static const np3d::CheatSelection empty;
+    auto found=state.settings.cheats.find(cheatKey());
+    return found==state.settings.cheats.end()?empty:found->second;
+}
+std::string cheatError(np3d::CheatStatus status) {
+    switch (status) {
+    case np3d::CheatStatus::Ready: return {};
+    case np3d::CheatStatus::MissingDatabase: return format(Text::CheatMissing,fmt::arg("path",std::string(Root)+"/cheats/usrcheat.dat"));
+    case np3d::CheatStatus::NotFound: return tr(Text::CheatNotFound);
+    case np3d::CheatStatus::SelectionChanged: return tr(Text::CheatChanged);
+    case np3d::CheatStatus::TooLarge: return tr(Text::CheatTooLarge);
+    case np3d::CheatStatus::InvalidDatabase: return tr(Text::CheatInvalid);
+    }
+    return {};
+}
+void showCheats(np3d::SourcePtr rom,np3d::SourcePtr card) {
+    state.cheats=std::make_unique<np3d::Cheats>();
+    state.cheatStatus=state.cheats->load(std::string(Root)+"/cheats/usrcheat.dat",rom,card);
+    state.cheatFolder=-1;
+    if (state.cheatStatus==np3d::CheatStatus::Ready) state.cheats->restore(selectedCheats());
+    state.cheatRows=state.cheats->children();go(Page::Cheats);render();
+}
 bool apPatchEnabled() {
     auto found=state.settings.apPatch.find(state.gameKey);
     return found==state.settings.apPatch.end() || found->second;

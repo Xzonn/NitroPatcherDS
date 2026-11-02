@@ -670,5 +670,77 @@
     "key": "common.unlimited",
     "original": "Unlimited",
     "translation": "제한 없음"
+  },
+  {
+    "index": 113,
+    "key": "cheats.title",
+    "original": "Cheats",
+    "translation": "치트"
+  },
+  {
+    "index": 114,
+    "key": "cheats.match.patched",
+    "original": "Matched: patched version",
+    "translation": "패치 적용 버전과 일치"
+  },
+  {
+    "index": 115,
+    "key": "cheats.match.original",
+    "original": "Matched: original version",
+    "translation": "원본 버전과 일치"
+  },
+  {
+    "index": 116,
+    "key": "cheats.database_missing",
+    "original": "Place usrcheat.dat in:\n{path}",
+    "translation": "usrcheat.dat를 다음 위치에 넣으세요:\n{path}"
+  },
+  {
+    "index": 117,
+    "key": "cheats.not_found",
+    "original": "Neither the patched nor original version has a matching cheat list.",
+    "translation": "패치 적용 버전과 원본 모두에 일치하는 치트가 없습니다."
+  },
+  {
+    "index": 118,
+    "key": "cheats.selected_bytes",
+    "original": "Code data: {bytes}/{limit} bytes",
+    "translation": "코드: {bytes}/{limit}바이트"
+  },
+  {
+    "index": 119,
+    "key": "cheats.no_description",
+    "original": "No description provided.",
+    "translation": "설명이 없습니다."
+  },
+  {
+    "index": 120,
+    "key": "cheats.selection_changed",
+    "original": "Cheat list changed. Open Cheats and select the codes again.",
+    "translation": "치트 목록이 변경되었습니다. 치트 메뉴에서 다시 선택하세요."
+  },
+  {
+    "index": 121,
+    "key": "cheats.too_large",
+    "original": "Selected codes exceed the available space. Disable some codes.",
+    "translation": "선택한 코드가 용량을 초과합니다. 일부 치트를 끄세요."
+  },
+  {
+    "index": 122,
+    "key": "cheats.clear_all",
+    "original": "Disable all",
+    "translation": "모두 끄기"
+  },
+  {
+    "index": 123,
+    "key": "cheats.invalid_database",
+    "original": "Cannot read this cheat database.",
+    "translation": "치트 데이터베이스를 읽을 수 없습니다."
+  },
+  {
+    "index": 124,
+    "key": "cheats.prepare_confirmation",
+    "original": "The selected patches must be prepared before matching cheats for the patched game. This may take a long time.\n\nPress A to prepare, or B to return.",
+    "translation": "패치 적용 후 게임에 맞는 치트를 찾으려면 선택한 패치를 먼저 준비해야 합니다. 시간이 오래 걸릴 수 있습니다.\n\nA를 누르면 준비하고, B를 누르면 돌아갑니다."
   }
 ]

@@ -168,7 +168,7 @@ std::vector<std::string> listPatches(const std::string& root) {
     return result;
 }
 
-Prepared prepare(SourcePtr card, const std::string& path, const std::string& root, bool dsOnly, bool skipRomMd5) {
+Prepared prepare(SourcePtr card, const std::string& path, const std::string& root, bool dsOnly, bool skipRomMd5, PreparationConfirm confirm) {
     require(path.compare(0, root.size() + 9, root + "/patches/") == 0 && path.find("/../") == std::string::npos,
         "Place patches in nitro-patcher/patches");
     makeDirectory(root);
@@ -216,6 +216,7 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     }
     if (reused) progress("Using prepared cache",0,0);
     if (!reused) {
+        if (confirm && !confirm()) return {"", nullptr, false, "", false, true};
         if (dsOnly && checkMd5) return {"", nullptr, false, DsModeMd5Error, false};
         progress("Planning patch preparation", 0, 0);
         progress("Removing unfinished files", 0, 0);
@@ -304,9 +305,9 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     return {ready, rom, reused};
 }
 
-Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const std::string& root, bool dsOnly, bool skipRomMd5) {
+Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const std::string& root, bool dsOnly, bool skipRomMd5, PreparationConfirm confirm) {
     require(!paths.empty(), "No patches selected");
-    if (paths.size() == 1) return prepare(card, paths.front(), root, dsOnly, skipRomMd5);
+    if (paths.size() == 1) return prepare(card, paths.front(), root, dsOnly, skipRomMd5, confirm);
     makeDirectory(root + "/cache");
     makeDirectory(root + "/config");
     auto rawHeader = readBytes(card, 0, 512);
@@ -355,6 +356,7 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
     }
     if (reused) progress("Using prepared cache",0,0);
     if (!reused) {
+        if (confirm && !confirm()) return {"", nullptr, false, "", false, true};
         if (dsOnly && checkMd5) return {"", nullptr, false, DsModeMd5Error, false};
         progress("Planning patch preparation", 0, 0);
         removeTree(pending);

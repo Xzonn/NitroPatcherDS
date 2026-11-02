@@ -27,6 +27,7 @@ endif
 
 CPPFLAGS := $(ICONV_INCLUDE) $(LZMA_INCLUDE) $(NDS_INCLUDE) -I$(CURDIR) -I$(COMMON) -I$(MINIZ) -I$(XDELTA) -I$(CJSON) -I$(MBEDTLS)/include -I$(ROOT)/vendor/uni-algo/include
 CPPFLAGS += -I$(ROOT)/vendor/BlzHelper/native
+CPPFLAGS += -I$(ROOT)/vendor/TWiLightMenu/romsel_dsimenutheme/arm9/source
 CPPFLAGS += -DUNI_ALGO_STATIC_DATA
 CPPFLAGS += -DNP3D_PREPARE_TRACE=$(PREPARE_TRACE)
 CPPFLAGS += -I$(MD4C)
@@ -40,9 +41,10 @@ CFLAGS := -O2 -g -Wall -ffunction-sections -fdata-sections $(ARCH)
 CXXFLAGS := $(CFLAGS) -std=gnu++17 -fexceptions
 VPATH := $(CURDIR):$(COMMON):$(MINIZ):$(XDELTA):$(CJSON):$(MBEDTLS)/library:$(MD4C):$(ROOT)/vendor/BlzHelper/native
 CFILES := miniz.c miniz_zip.c miniz_tinfl.c cJSON.c xdelta3.c md5.c sha1.c sha256.c md.c aes.c platform_util.c md4c.c entity.c
-CPPFILES := core.cpp delta.cpp package.cpp cache.cpp rom.cpp twl.cpp twl_complete.cpp arm9_blz.cpp blz.cpp nds_adapter.cpp ndsextract.cpp fnt.cpp filename.cpp encryption.cpp crc.cpp environment.cpp ui_data.cpp preparation_progress.cpp
+CPPFILES := core.cpp delta.cpp package.cpp cache.cpp rom.cpp twl.cpp twl_complete.cpp arm9_blz.cpp blz.cpp nds_adapter.cpp ndsextract.cpp fnt.cpp filename.cpp encryption.cpp crc.cpp environment.cpp ui_data.cpp preparation_progress.cpp cheats.cpp
 OBJECTS := $(addprefix $(BUILD)/,$(CFILES:.c=.o) $(CPPFILES:.cpp=.o))
 OBJECTS += $(BUILD)/format.o
+OBJECTS += $(BUILD)/twl_cheats.o
 
 .PHONY: all
 all: $(BUILD)/libnp3d.a
@@ -77,6 +79,10 @@ $(BUILD)/libnp3d.a: $(OBJECTS)
 
 $(BUILD)/format.o: $(FMT)/src/format.cc $(CURDIR)/Makefile | $(BUILD)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
+
+$(BUILD)/cheats.o: CPPFLAGS += -DCHEAT_DATA_ONLY
+$(BUILD)/twl_cheats.o: $(ROOT)/vendor/TWiLightMenu/romsel_dsimenutheme/arm9/source/cheat.cpp $(CURDIR)/Makefile | $(BUILD)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -DCHEAT_DATA_ONLY -MMD -MP -c $< -o $@
 
 $(ROOT)/out/np3d-prepare: $(ROOT)/source/host/main.cpp $(BUILD)/libnp3d.a
 	mkdir -p $(ROOT)/out

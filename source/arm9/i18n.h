@@ -17,7 +17,8 @@ enum class Text {
     StorageTitle, StorageConfirm, StorageNotice, StorageWriting, StorageDirectories, StorageAllocation,
     StorageCompare, StorageBackup, StorageRepair, StorageVerify, StorageCopy, StorageDifferences,
     StorageFsInfo, StorageClean, StorageReady, StorageDamaged, StorageAmbiguous, StorageUnsupported,
-    StorageBusy, StorageMemory, StorageIoError, StorageRepaired, StorageBackupPath, CheckDSiData, DSModeXdelta, ApPatch, Enabled, Disabled, DSModeNotice, SkipRomMd5, DSModeMd5Required, LimitOpenFiles, Unlimited, Count
+    StorageBusy, StorageMemory, StorageIoError, StorageRepaired, StorageBackupPath, CheckDSiData, DSModeXdelta, ApPatch, Enabled, Disabled, DSModeNotice, SkipRomMd5, DSModeMd5Required, LimitOpenFiles, Unlimited,
+    Cheats, CheatPatched, CheatOriginal, CheatMissing, CheatNotFound, CheatSelected, CheatNoDescription, CheatChanged, CheatTooLarge, CheatClear, CheatInvalid, CheatPrepare, Count
 };
 extern int LanguageCount;
 extern std::vector<std::string> languageCodes;

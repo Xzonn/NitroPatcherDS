@@ -670,5 +670,77 @@
     "key": "common.unlimited",
     "original": "Unlimited",
     "translation": "無制限"
+  },
+  {
+    "index": 113,
+    "key": "cheats.title",
+    "original": "Cheats",
+    "translation": "チート"
+  },
+  {
+    "index": 114,
+    "key": "cheats.match.patched",
+    "original": "Matched: patched version",
+    "translation": "パッチ適用後の版に一致"
+  },
+  {
+    "index": 115,
+    "key": "cheats.match.original",
+    "original": "Matched: original version",
+    "translation": "オリジナル版に一致"
+  },
+  {
+    "index": 116,
+    "key": "cheats.database_missing",
+    "original": "Place usrcheat.dat in:\n{path}",
+    "translation": "usrcheat.dat を次の場所に置いてください：\n{path}"
+  },
+  {
+    "index": 117,
+    "key": "cheats.not_found",
+    "original": "Neither the patched nor original version has a matching cheat list.",
+    "translation": "パッチ適用後とオリジナルのどちらにも対応するチートが見つかりません。"
+  },
+  {
+    "index": 118,
+    "key": "cheats.selected_bytes",
+    "original": "Code data: {bytes}/{limit} bytes",
+    "translation": "コード容量：{bytes}/{limit} バイト"
+  },
+  {
+    "index": 119,
+    "key": "cheats.no_description",
+    "original": "No description provided.",
+    "translation": "説明はありません。"
+  },
+  {
+    "index": 120,
+    "key": "cheats.selection_changed",
+    "original": "Cheat list changed. Open Cheats and select the codes again.",
+    "translation": "チート一覧が変わりました。チートメニューで選び直してください。"
+  },
+  {
+    "index": 121,
+    "key": "cheats.too_large",
+    "original": "Selected codes exceed the available space. Disable some codes.",
+    "translation": "容量の上限を超えています。一部のチートを無効にしてください。"
+  },
+  {
+    "index": 122,
+    "key": "cheats.clear_all",
+    "original": "Disable all",
+    "translation": "すべて無効"
+  },
+  {
+    "index": 123,
+    "key": "cheats.invalid_database",
+    "original": "Cannot read this cheat database.",
+    "translation": "チートデータベースを読み込めません。"
+  },
+  {
+    "index": 124,
+    "key": "cheats.prepare_confirmation",
+    "original": "The selected patches must be prepared before matching cheats for the patched game. This may take a long time.\n\nPress A to prepare, or B to return.",
+    "translation": "パッチ適用後のゲームに対応するチートを検索するには、選択したパッチの準備が必要です。時間がかかる場合があります。\n\nAで準備を開始、Bで戻ります。"
   }
 ]

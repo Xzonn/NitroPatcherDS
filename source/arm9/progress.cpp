@@ -1,5 +1,6 @@
 #include "progress.h"
 #include "ui.h"
+#include "i18n.h"
 #include "../patch/core.h"
 #include "../patch/preparation_progress.h"
 #include "resources.h"
@@ -56,4 +57,11 @@ void planPatchProgress(np3d::SourcePtr card,const std::vector<std::string>& path
 void finishPatchProgress(bool reused) {
     np3d::progress(reused?"Patch cache reused":"Patch cache prepared",1,1);
     np3d::setProgressHandler(nullptr);
+}
+bool confirmCheatPreparation() {
+    uint64_t paused=np3d::preparationMilliseconds();
+    bool accepted=ui::confirm(ui::tr(ui::Text::CheatPrepare));
+    started+=np3d::preparationMilliseconds()-paused;
+    if (accepted) ui::preparing();
+    return accepted;
 }

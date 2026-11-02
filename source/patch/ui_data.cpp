@@ -143,6 +143,21 @@ Settings loadSettings(const std::string& root) {
         require(cJSON_IsBool(game), "Invalid game open file limit setting");
         settings.limitOpenFiles[game->string] = cJSON_IsTrue(game);
     }
+    auto cheats = cJSON_GetObjectItemCaseSensitive(json.get(), "cheats");
+    for (auto game = cheats ? cheats->child : nullptr; game; game = game->next) {
+        require(cJSON_IsObject(game), "Invalid game cheat selection");
+        auto& selection = settings.cheats[game->string];
+        auto code = cJSON_GetObjectItemCaseSensitive(game, "gameCode");
+        auto crc = cJSON_GetObjectItemCaseSensitive(game, "crc32");
+        require(cJSON_IsNumber(code) && cJSON_IsNumber(crc), "Invalid cheat game identity");
+        selection.identity = {uint32_t(code->valuedouble), uint32_t(crc->valuedouble)};
+        auto enabled = cJSON_GetObjectItemCaseSensitive(game, "enabled");
+        require(cJSON_IsArray(enabled), "Invalid enabled cheat list");
+        for (auto item = enabled->child; item; item = item->next) {
+            require(cJSON_IsString(item), "Invalid selected cheat");
+            selection.enabled.push_back(item->valuestring);
+        }
+    }
     return settings;
 }
 
@@ -162,6 +177,14 @@ void saveSettings(const std::string& root, const Settings& settings) {
     for (const auto& game : settings.skipRomMd5) cJSON_AddBoolToObject(skipRomMd5, game.first.c_str(), game.second);
     auto limitOpenFiles = cJSON_AddObjectToObject(json.get(), "limitOpenFiles");
     for (const auto& game : settings.limitOpenFiles) cJSON_AddBoolToObject(limitOpenFiles, game.first.c_str(), game.second);
+    auto cheats = cJSON_AddObjectToObject(json.get(), "cheats");
+    for (const auto& game : settings.cheats) {
+        auto entry = cJSON_AddObjectToObject(cheats, game.first.c_str());
+        cJSON_AddNumberToObject(entry, "gameCode", game.second.identity.gameCode);
+        cJSON_AddNumberToObject(entry, "crc32", game.second.identity.crc32);
+        auto enabled = cJSON_AddArrayToObject(entry, "enabled");
+        for (const auto& code : game.second.enabled) cJSON_AddItemToArray(enabled, cJSON_CreateString(code.c_str()));
+    }
     char* data = cJSON_PrintUnformatted(json.get());
     require(data, "Cannot serialize settings");
     std::string path = root + "/config/settings.json";

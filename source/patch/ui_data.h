@@ -1,5 +1,6 @@
 #pragma once
 #include "core.h"
+#include "cheats.h"
 #include <map>
 
 namespace np3d {
@@ -19,6 +20,7 @@ struct Settings {
     std::map<std::string, bool> apPatch;
     std::map<std::string, bool> skipRomMd5;
     std::map<std::string, bool> limitOpenFiles;
+    std::map<std::string, CheatSelection> cheats;
 };
 Settings loadSettings(const std::string& root);
 void saveSettings(const std::string& root, const Settings& settings);

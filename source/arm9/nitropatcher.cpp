@@ -190,8 +190,8 @@ int main(int argc,char** argv) {
                 hasCard=false;reinsert=true;ui::noCard(true,true);continue;
             }
         }
-        if ((action==ui::Action::Launch && !ui::selectedPatches().empty()) || !isDSiMode()) {
-            auto paths=action==ui::Action::Launch?ui::selectedPatches():std::vector<std::string>();
+        if (action==ui::Action::Cheats || (action==ui::Action::Launch && (!ui::selectedPatches().empty() || !ui::selectedCheats().enabled.empty())) || !isDSiMode()) {
+            auto paths=action==ui::Action::Original?std::vector<std::string>():ui::selectedPatches();
             bool dsOnly=!isDSiMode() && gameHeader->unitCode==2;
             bool skipRomMd5=ui::skipRomMd5Enabled();
             np3d::setMapFileLimit(ui::limitOpenFilesEnabled());
@@ -222,15 +222,28 @@ int main(int argc,char** argv) {
                     prepared.rom=std::make_shared<np3d::Map>(prepared.directory+"/map.bin",payload,card,true);
                     prepared.rom->append(np3d::Kind::Card,0,card->size);
                     prepared.rom->finish();payload->sync();
-                } else prepared=np3d::prepare(card,paths,"sd:/nitro-patcher",dsOnly,skipRomMd5);
+                } else prepared=np3d::prepare(card,paths,"sd:/nitro-patcher",dsOnly,skipRomMd5,
+                    action==ui::Action::Cheats?confirmCheatPreparation:nullptr);
+                if (prepared.cancelled) {
+                    np3d::setProgressHandler(nullptr);np3d::finishPreparationLog(false,"Preparation cancelled");continue;
+                }
                 error=prepared.error;reused=prepared.reused;mismatch=prepared.mismatch;
                 if (error==np3d::DsModeDeltaError) error=ui::tr(ui::Text::DSModeXdelta);
                 if (error==np3d::DsModeMd5Error) error=ui::tr(ui::Text::DSModeMd5Required);
-                if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel,ui::apPatchEnabled(),filename);finishPatchProgress(reused);}
+                if (error.empty()) {
+                    if (action==ui::Action::Cheats) {finishPatchProgress(reused);ui::showCheats(prepared.rom,card);}
+                    else {
+                        error=ui::cheatError(np3d::writeCheats("sd:/nitro-patcher",prepared.rom,card,
+                            action==ui::Action::Original?np3d::CheatSelection():ui::selectedCheats(),isDSiMode()?0x4000:0x1C00));
+                        if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel,ui::apPatchEnabled(),filename);finishPatchProgress(reused);}
+                        else np3d::setProgressHandler(nullptr);
+                    }
+                }
                 else np3d::setProgressHandler(nullptr);
             }
             np3d::finishPreparationLog(reused,error);
             if (!error.empty()) {ui::error(error,mismatch);continue;}
+            if (action==ui::Action::Cheats) continue;
             startPatchedGame();
         }
 #if NP3D_DIAGNOSTIC

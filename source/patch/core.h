@@ -141,9 +141,11 @@ struct Prepared {
     bool reused = false;
     std::string error;
     bool mismatch = false;
+    bool cancelled = false;
 };
-Prepared prepare(SourcePtr card, const std::string& patch, const std::string& root, bool dsOnly = false, bool skipRomMd5 = false);
-Prepared prepare(SourcePtr card, const std::vector<std::string>& patches, const std::string& root, bool dsOnly = false, bool skipRomMd5 = false);
+using PreparationConfirm = bool (*)();
+Prepared prepare(SourcePtr card, const std::string& patch, const std::string& root, bool dsOnly = false, bool skipRomMd5 = false, PreparationConfirm confirm = nullptr);
+Prepared prepare(SourcePtr card, const std::vector<std::string>& patches, const std::string& root, bool dsOnly = false, bool skipRomMd5 = false, PreparationConfirm confirm = nullptr);
 std::vector<std::string> listPatches(const std::string& root);
 
 }

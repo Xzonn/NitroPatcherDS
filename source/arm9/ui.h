@@ -1,9 +1,10 @@
 #pragma once
 #include "../patch/core.h"
+#include "../patch/cheats.h"
 #include <nds.h>
 
 namespace ui {
-enum class Action { None, Launch, Original, Report, ReadCard, ChangeCard, RepairStorage };
+enum class Action { None, Launch, Original, Report, ReadCard, ChangeCard, RepairStorage, Cheats };
 struct PreparationProgress {
     uint32_t fileNumber = 0, fileCount = 0;
     int64_t remaining = -1;
@@ -21,6 +22,9 @@ const std::vector<std::string>& selectedPatches();
 bool apPatchEnabled();
 bool skipRomMd5Enabled();
 bool limitOpenFilesEnabled();
+const np3d::CheatSelection& selectedCheats();
+void showCheats(np3d::SourcePtr rom, np3d::SourcePtr card);
+std::string cheatError(np3d::CheatStatus status);
 void preparing();
 void progress(const char* stage, uint32_t completed, uint32_t total, const char* detail, uint64_t elapsed, const PreparationProgress& preparation);
 void report(bool working);

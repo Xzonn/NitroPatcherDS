@@ -670,5 +670,77 @@
     "key": "common.unlimited",
     "original": "Unlimited",
     "translation": "不限"
+  },
+  {
+    "index": 113,
+    "key": "cheats.title",
+    "original": "Cheats",
+    "translation": "金手指"
+  },
+  {
+    "index": 114,
+    "key": "cheats.match.patched",
+    "original": "Matched: patched version",
+    "translation": "匹配：補丁後版本"
+  },
+  {
+    "index": 115,
+    "key": "cheats.match.original",
+    "original": "Matched: original version",
+    "translation": "匹配：原版"
+  },
+  {
+    "index": 116,
+    "key": "cheats.database_missing",
+    "original": "Place usrcheat.dat in:\n{path}",
+    "translation": "請將 usrcheat.dat 放在：\n{path}"
+  },
+  {
+    "index": 117,
+    "key": "cheats.not_found",
+    "original": "Neither the patched nor original version has a matching cheat list.",
+    "translation": "補丁後版本和原版均未找到對應的金手指。"
+  },
+  {
+    "index": 118,
+    "key": "cheats.selected_bytes",
+    "original": "Code data: {bytes}/{limit} bytes",
+    "translation": "程式碼容量：{bytes}/{limit} 位元組"
+  },
+  {
+    "index": 119,
+    "key": "cheats.no_description",
+    "original": "No description provided.",
+    "translation": "未提供說明。"
+  },
+  {
+    "index": 120,
+    "key": "cheats.selection_changed",
+    "original": "Cheat list changed. Open Cheats and select the codes again.",
+    "translation": "金手指清單已改變，請開啟金手指選單重新選擇。"
+  },
+  {
+    "index": 121,
+    "key": "cheats.too_large",
+    "original": "Selected codes exceed the available space. Disable some codes.",
+    "translation": "所選程式碼超過可用容量，請停用部分金手指。"
+  },
+  {
+    "index": 122,
+    "key": "cheats.clear_all",
+    "original": "Disable all",
+    "translation": "全部停用"
+  },
+  {
+    "index": 123,
+    "key": "cheats.invalid_database",
+    "original": "Cannot read this cheat database.",
+    "translation": "無法讀取金手指資料庫。"
+  },
+  {
+    "index": 124,
+    "key": "cheats.prepare_confirmation",
+    "original": "The selected patches must be prepared before matching cheats for the patched game. This may take a long time.\n\nPress A to prepare, or B to return.",
+    "translation": "需要先準備所選修補檔，才能比對修補後版本的金手指。準備可能需要較長時間。\n\n按 A 繼續準備，按 B 返回。"
   }
 ]
