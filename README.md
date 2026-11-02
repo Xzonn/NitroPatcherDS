@@ -6,7 +6,7 @@ Apply patches to retail Nintendo DS game cartridges on a 3DS, 2DS, DSi, DS or DS
 
 ## Download
 
-Download the package for your console. Each package includes the app, a patch folder, and user guides in English and Chinese.
+Download the package for your console. Each package includes the app, folders for patches and a cheat database, and user guides in English and Chinese.
 
 | Console           | Package               | Requirements                                                                |
 | ----------------- | --------------------- | --------------------------------------------------------------------------- |
@@ -51,11 +51,11 @@ Download the package for your console. Each package includes the app, a patch fo
 | X / SELECT           | Open the menu                                    |
 | B                    | Go back                                          |
 
-The bottom screen also supports touch controls. The app remembers your language and the enabled patches and their order for each game. Patches are applied in the order you select them, shown by the numbers beside their names. With no patches selected, START launches the original game.
+The bottom screen also supports touch controls. The app remembers your language and the enabled patches and their order for each game. Patches are applied in the order you select them, shown by the numbers beside their names. With neither patches nor cheats selected, START launches the original game.
 
 The menu includes per-game settings for built-in anti-piracy patches and skipping the XZP ROM MD5 check. Anti-piracy patches are enabled by default. Skipping MD5 is disabled by default, except when running a DSi-enhanced game on an NDS or DS Lite.
 
-Hold L + R + Down + B for about two seconds during a patched game to return to NitroPatcherDS. Save your game first.
+Hold L + R + Down + B for about two seconds during a game launched with patches or cheats to return to NitroPatcherDS. Save your game first.
 
 Supported files are `.xzp`, `.zip` packages with the same internal structure as XZP, and whole-ROM `.xdelta` patches. Your cartridge must match the region and revision required by the patch.
 
@@ -66,6 +66,10 @@ NDS and DS Lite run DSi-enhanced games in DS mode. They can prepare XZP patches 
 Caches are stored in `nitro-patcher/cache/`. To free up space, turn off the console and delete this folder. The app will prepare the files again next time. Cartridge save data is unaffected.
 
 See the [user guide](docs/usage.md) for detailed controls, changing cartridges, cache handling and troubleshooting. To build from source, see the [build guide](docs/build.md).
+
+## Using cheats
+
+Put `usrcheat.dat` in `nitro-patcher/cheats/`, then open X → Cheats to select codes. Press B to save and return, then START from the patch list to launch. See the [user guide](docs/usage.md#cheats) for controls.
 
 ## Open source projects
 

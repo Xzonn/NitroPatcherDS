@@ -80,7 +80,7 @@ At the cartridge prompt, insert your game cartridge and press A to read it. Once
 2. Press START to launch the game.
 3. When you use a patch for the first time, the app prepares the required files and then starts the game.
 
-The app remembers the enabled patches and their order for each game, and restores your selection the next time you open it. If no patches are enabled, pressing START launches the original game.
+The app remembers the enabled patches and their order for each game, and restores your selection the next time you open it. If neither patches nor cheats are enabled, pressing START launches the original game.
 
 During preparation, the screen shows the current step, progress, elapsed time and estimated time remaining. While processing files, it also shows the current file number and total file count. The remaining time is estimated for the whole preparation process and adjusts to the actual processing speed.
 
@@ -93,6 +93,17 @@ Patches are applied in the order you select them. The numbers `[1]`, `[2]` and s
 Follow the patch authors' instructions when combining patches. For example, if a modification requires a translated version of the game, select the translation patch first, followed by that modification.
 
 You can combine multiple patches. Each patch uses the preceding result as its input. When ROM MD5 verification is enabled, its MD5 requirement is checked against that result; preprocessing also uses that result. An incompatible order may cause a preparation error. Follow the patch authors' instructions.
+
+## Cheats
+
+Put a TWiLight Menu++ compatible `usrcheat.dat` in `nitro-patcher/cheats/` on the storage card.
+
+1. Select your patches, then open X → Cheats. When preparation is required, press A to proceed or B to return.
+2. Press A to open a folder or enable or disable a code, Y to read its description, and SELECT to disable all codes.
+3. Press B to leave a folder. Press B from the main cheat list to save your choices and return to the menu.
+4. Return to the patch list and press START to launch.
+
+Choices are saved for each game and patch combination. To play without patches or cheats, choose Start original from the menu.
 
 ## Buttons and touch controls
 
@@ -112,17 +123,18 @@ Patch information comes from the package itself. The app indicates when a patch 
 
 ### Returning from a game
 
-During a patched game launched through NitroPatcherDS, hold L + R + Down + B for about two seconds to return to NitroPatcherDS. Save your progress in the game first.
+During a game launched through NitroPatcherDS with patches or cheats enabled, hold L + R + Down + B for about two seconds to return to NitroPatcherDS. Save your progress in the game first.
 
 On NDS / DS Lite, keep the flashcard inserted. After returning, follow the reinsertion prompt: remove and reinsert the game cartridge, then press A to read it.
 
-On 3DS / DSi, this shortcut is unavailable when starting the original game without patches. On NDS / DS Lite, it also works without patches.
+On 3DS / DSi, this shortcut is unavailable when starting the original game with neither patches nor cheats enabled. On NDS / DS Lite, it also works for the original game.
 
 ## Menu
 
+- **Cheats**: Select codes for the current game and patch combination. See [Cheats](#cheats) for database placement and controls.
 - **Current game AP patches**: Enable or disable nds-bootstrap's built-in anti-piracy patches. Enabled by default and saved per game. Change this setting if the patch author asks you to disable built-in AP fixes.
 - **Skip ROM MD5**: Skip the `md5.txt` match requirement when preparing XZP or ZIP packages. Saved per game and disabled by default, except for DSi-enhanced games on NDS / DS Lite. ZIP and xdelta integrity checks remain active. If whole-ROM preprocessing needs an MD5 to select its delta file, the app still calculates it.
-- **Start original**: Launch the current cartridge without applying patches.
+- **Start original**: Launch the current cartridge with patches and cheats disabled.
 - **Read another Game Card**: Return to the cartridge prompt. Remove and reinsert your cartridge, then press A to read it.
 - **Environment report**: Create a report about the console and SD card to help diagnose problems.
 - **Interface language**: Multiple languages are supported, including Simplified Chinese, Traditional Chinese, Japanese, English and Korean. Press A to save your choice, or B to restore the previous language.
@@ -135,7 +147,7 @@ After preparation, the cache is stored in `nitro-patcher/cache/` on the SD card.
 
 To free up space, turn off the console and delete `nitro-patcher/cache/`. The app will prepare the files again the next time you launch a patched game. Save data is stored on the cartridge, so deleting the patch cache does not delete your saves.
 
-Your language, patch selections and per-game AP and ROM MD5 settings are stored in `nitro-patcher/config/settings.json`.
+Your language, patch selections, cheat selections and per-game AP and ROM MD5 settings are stored in `nitro-patcher/config/settings.json`.
 
 For patches containing `md5.txt`, disabling **Skip ROM MD5** causes caches prepared without verification to be rebuilt and checked. DSi-enhanced games on NDS require a complete, verified cache prepared on a 3DS or DSi when this option is disabled.
 
