@@ -200,6 +200,7 @@ int main(int argc,char** argv) {
             std::string description;
             for (const auto& path : paths) {if (!description.empty()) description+=" -> ";description+=path;}
             np3d::beginPreparationLog("sd:/nitro-patcher",description);
+            np3d::logPreparation("VERSION " NP3D_VERSION);
             beginPatchProgress();
             bool reused=false;
             bool mismatch=false;

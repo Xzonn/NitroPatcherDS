@@ -23,10 +23,11 @@ struct DeltaOutput {
     size_t budget = 0, allocated = 0;
     bool exhausted = false;
     std::string label;
-    std::vector<uint8_t> buffer = std::vector<uint8_t>(BufferSize);
-    std::vector<uint8_t> literals = std::vector<uint8_t>(BufferSize);
-    std::vector<uint8_t> history = std::vector<uint8_t>(BufferSize);
+    uint32_t chunk;
+    std::vector<uint8_t> buffer, literals, history;
     std::unique_ptr<Cached> payload;
+
+    explicit DeltaOutput(uint32_t bytes = BufferSize) : chunk(bytes), buffer(bytes), literals(bytes), history(bytes) {}
 
     void flush() {
         if (!buffered) return;
@@ -36,8 +37,8 @@ struct DeltaOutput {
 
     void record(xd3_stream* stream, const uint8_t* data, uint32_t length) {
         if (stream->dec_win_ind & 4) adler = mz_adler32(adler, data, length);
-        uint32_t first = std::min(length, BufferSize - size % BufferSize);
-        std::memcpy(history.data() + size % BufferSize, data, first);
+        uint32_t first = std::min(length, chunk - size % chunk);
+        std::memcpy(history.data() + size % chunk, data, first);
         std::memcpy(history.data(), data + first, length - first);
         size += length;
         if (size - notified >= BufferSize || size == stream->dec_winstart + stream->dec_tgtlen) {
@@ -48,21 +49,21 @@ struct DeltaOutput {
 
     void literal(xd3_stream* stream, const uint8_t* data, uint32_t length) {
         while (length) {
-            uint32_t take = std::min(length, BufferSize - buffered);
+            uint32_t take = std::min(length, chunk - buffered);
             target->append(Kind::Patch, target->payload->size + buffered, take);
             std::memcpy(literals.data() + buffered, data, take);
             buffered += take;
             record(stream, data, take);
-            if (buffered == BufferSize) flush();
+            if (buffered == chunk) flush();
             data += take;
             length -= take;
         }
     }
 
     void read(uint32_t offset, uint8_t* data, uint32_t length) {
-        if (size - offset <= BufferSize) {
-            uint32_t first = std::min(length, BufferSize - offset % BufferSize);
-            std::memcpy(data, history.data() + offset % BufferSize, first);
+        if (size - offset <= chunk) {
+            uint32_t first = std::min(length, chunk - offset % chunk);
+            std::memcpy(data, history.data() + offset % chunk, first);
             std::memcpy(data + first, history.data(), length - first);
         } else {
             while (length) {
@@ -93,9 +94,9 @@ static int emit(xd3_stream* stream, const xd3_hinst* instruction, const uint8_t*
     if (instruction->type == XD3_ADD) state.literal(stream, data, length);
     else if (instruction->type == XD3_RUN) {
         state.target->append(Kind::Fill, *data, length);
-        std::memset(state.buffer.data(), *data, std::min(length, BufferSize));
+        std::memset(state.buffer.data(), *data, std::min(length, state.chunk));
         while (length) {
-            uint32_t take = std::min(length, BufferSize);
+            uint32_t take = std::min(length, state.chunk);
             state.record(stream, state.buffer.data(), take);
             length -= take;
         }
@@ -111,7 +112,7 @@ static int emit(xd3_stream* stream, const xd3_hinst* instruction, const uint8_t*
             length -= take;
             uint32_t offset = stream->dec_cpyoff + address;
             while (take) {
-                uint32_t bytes = std::min(take, BufferSize);
+                uint32_t bytes = std::min(take, state.chunk);
                 if (input == state.target) state.read(offset, state.buffer.data(), bytes);
                 else input->read(offset, state.buffer.data(), bytes);
                 state.record(stream, state.buffer.data(), bytes);
@@ -125,7 +126,7 @@ static int emit(xd3_stream* stream, const xd3_hinst* instruction, const uint8_t*
             require(offset < state.size, "VCDIFF target copy references unwritten data");
             uint32_t distance = state.size - offset;
             while (length) {
-                uint32_t take = std::min(length, BufferSize);
+                uint32_t take = std::min(length, state.chunk);
                 uint32_t filled = std::min(take, distance);
                 state.read(offset, state.buffer.data(), filled);
                 while (filled < take) {
@@ -177,7 +178,11 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, const std::st
 
 std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr input, const std::string& label) {
     logPreparation("DELTA begin name=" + label + " sourceSize=" + std::to_string(source->size));
-    DeltaOutput output;
+    uint32_t chunk = work.dsOnly ? 16384 : BufferSize;
+#ifdef ARM9
+    if (!isDSiMode()) chunk = 16384;
+#endif
+    DeltaOutput output(chunk);
     output.source = source;
     output.label = label;
     output.target = work.map();
@@ -189,6 +194,7 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr inp
     output.budget = 8 * 1024 * 1024;
 #endif
     xd3_stream stream = {};
+    std::unique_ptr<xd3_stream, decltype(&xd3_free_stream)> cleanup(&stream, xd3_free_stream);
     xd3_config config;
     xd3_init_config(&config, 0);
     config.opaque = &output;
@@ -199,13 +205,12 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr inp
     stream.external_adler32 = checksum;
     auto reject = [&](const char* message) -> std::shared_ptr<Map> {
         work.error = std::string("Cannot decode VCDIFF: ") + (output.exhausted ? "Decoder memory budget exceeded" : message) + " | " + label;
-        xd3_free_stream(&stream);
         return nullptr;
     };
     xd3_source original = {};
-    original.blksize = BufferSize;
+    original.blksize = chunk;
     require(xd3_set_source_and_size(&stream, &original, source->size) == 0, "Cannot configure VCDIFF source");
-    std::vector<uint8_t> buffer(BufferSize);
+    std::vector<uint8_t> buffer(chunk);
     uint32_t offset = 0;
     while (true) {
         NP3D_PREPARE_LOG("DELTA decode begin inputOffset=" + std::to_string(offset));
@@ -216,7 +221,7 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr inp
                 if (xd3_close_stream(&stream) != 0) return reject(stream.msg ? stream.msg : "Incomplete VCDIFF stream");
                 break;
             }
-            uint32_t take = std::min(BufferSize, input->size - offset);
+            uint32_t take = std::min(chunk, input->size - offset);
             NP3D_PREPARE_LOG("DELTA read begin offset=" + std::to_string(offset) + " bytes=" + std::to_string(take));
             input->read(offset, buffer.data(), take);
             NP3D_PREPARE_LOG("DELTA read done offset=" + std::to_string(offset));
@@ -234,7 +239,7 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr inp
         }
     }
     if (!stream.dec_window_count) return reject("VCDIFF contains no target windows");
-    xd3_free_stream(&stream);
+    cleanup.reset();
     output.flush();
     output.target->finish();
     logPreparation("DELTA done name=" + label + " outputSize=" + std::to_string(output.target->size));
