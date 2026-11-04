@@ -239,7 +239,7 @@ int main(int argc,char** argv) {
                     auto payload=std::make_shared<np3d::Disk>(prepared.directory+"/data.bin","w+b");
                     prepared.rom=std::make_shared<np3d::Map>(prepared.directory+"/map.bin",payload,card,true);
                     prepared.rom->append(np3d::Kind::Card,0,card->size);
-                    prepared.rom->finish();payload->sync();
+                    prepared.rom->finish();prepared.rom->table->sync();payload->sync();
                 } else prepared=np3d::prepare(card,paths,"sd:/nitro-patcher",dsOnly,skipRomMd5,
                     action==ui::Action::Cheats?confirmCheatPreparation:nullptr);
                 if (prepared.cancelled) {
