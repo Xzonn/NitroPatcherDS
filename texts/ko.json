@@ -742,5 +742,17 @@
     "key": "cheats.prepare_confirmation",
     "original": "The selected patches must be prepared before matching cheats for the patched game. This may take a long time.\n\nPress A to prepare, or B to return.",
     "translation": "패치 적용 후 게임에 맞는 치트를 찾으려면 선택한 패치를 먼저 준비해야 합니다. 시간이 오래 걸릴 수 있습니다.\n\nA를 누르면 준비하고, B를 누르면 돌아갑니다."
+  },
+  {
+    "index": 125,
+    "key": "menu.update_display_while_reading",
+    "original": "Synchronous read wait: {state}",
+    "translation": "동기 읽기 대기: {state}"
+  },
+  {
+    "index": 126,
+    "key": "common.automatic",
+    "original": "Auto",
+    "translation": "자동"
   }
 ]

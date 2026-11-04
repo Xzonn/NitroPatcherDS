@@ -14,9 +14,17 @@ constexpr const char* Root = "sd:/nitro-patcher";
 constexpr uint16_t White = 0xffff, Black = 0x8000, Gray = 0xe739;
 constexpr int Visible = 6;
 enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading, Storage, Confirm, Cheats, CheatInfo };
-enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage, ApPatch, SkipRomMd5, LimitOpenFiles, Cheats, ToggleCheat, CheatInfo, ClearCheats };
-constexpr Text MenuLabels[] = {Text::Cheats,Text::ApPatch,Text::SkipRomMd5,Text::LimitOpenFiles,Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
-constexpr Command MenuCommands[] = {Command::Cheats,Command::ApPatch,Command::SkipRomMd5,Command::LimitOpenFiles,Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
+enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage, ApPatch, SkipRomMd5, LimitOpenFiles, UpdateDisplayWhileReading, Cheats, ToggleCheat, CheatInfo, ClearCheats };
+constexpr Text MenuLabels[] = {Text::Cheats,Text::ApPatch,Text::SkipRomMd5,Text::LimitOpenFiles,
+#if !NP3D_SLOT2
+    Text::UpdateDisplayWhileReading,
+#endif
+    Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
+constexpr Command MenuCommands[] = {Command::Cheats,Command::ApPatch,Command::SkipRomMd5,Command::LimitOpenFiles,
+#if !NP3D_SLOT2
+    Command::UpdateDisplayWhileReading,
+#endif
+    Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
 constexpr int MenuCount = sizeof(MenuCommands)/sizeof(MenuCommands[0]);
 constexpr const char* Licenses[] = {"NitroPatcherDS.txt", "md4c.txt", "fmt.txt", "Gulim-OFL.txt", "Gulim-AUTHORS.txt", "liblzma.txt"};
 constexpr int LicenseCount = sizeof(Licenses)/sizeof(Licenses[0]);
@@ -266,8 +274,9 @@ void render() {
             if (state.focus==index) fill(1,8,y,240,20,Gray);
             std::string label=MenuCommands[index]==Command::ApPatch?format(Text::ApPatch,fmt::arg("state",tr(apPatchEnabled()?Text::Enabled:Text::Disabled)))
                 :MenuCommands[index]==Command::SkipRomMd5?format(Text::SkipRomMd5,fmt::arg("state",tr(skipRomMd5Enabled()?Text::Enabled:Text::Disabled)))
-                :MenuCommands[index]==Command::LimitOpenFiles?format(Text::LimitOpenFiles,fmt::arg("limit",limitOpenFilesEnabled()?"16":tr(Text::Unlimited))):tr(MenuLabels[index]);
-            text(1,label,16,y+4); hits.push_back({8,y,240,20,MenuCommands[index],0});
+                :MenuCommands[index]==Command::LimitOpenFiles?format(Text::LimitOpenFiles,fmt::arg("limit",limitOpenFilesEnabled()?"16":tr(Text::Unlimited)))
+                :MenuCommands[index]==Command::UpdateDisplayWhileReading?format(Text::UpdateDisplayWhileReading,fmt::arg("state",tr(updateDisplayWhileReading()<0?Text::Automatic:updateDisplayWhileReading()?Text::Enabled:Text::Disabled))):tr(MenuLabels[index]);
+            scrollText(1,label,16,y+4,224,state.focus==index); hits.push_back({8,y,240,20,MenuCommands[index],0});
         }
         backKey(); break;
     }
@@ -402,7 +411,7 @@ void move(int distance,bool page=false) {
 }
 void command(Command value,int argument=0) {
     if (storage::writeBlocked() && (value==Command::Toggle || value==Command::Start ||
-        value==Command::Original || value==Command::Report || value==Command::PickLanguage || value==Command::ApPatch || value==Command::SkipRomMd5 || value==Command::Cheats)) {
+        value==Command::Original || value==Command::Report || value==Command::PickLanguage || value==Command::ApPatch || value==Command::SkipRomMd5 || value==Command::UpdateDisplayWhileReading || value==Command::Cheats)) {
         state.fatal=false;state.mismatch=false;state.detail=tr(Text::StorageIoError);go(Page::Error);return;
     }
     switch (value) {
@@ -443,6 +452,14 @@ void command(Command value,int argument=0) {
         if (state.hasCard) {state.settings.skipRomMd5[state.gameKey]=!skipRomMd5Enabled();save();} break;
     case Command::LimitOpenFiles:
         if (state.hasCard) {state.settings.limitOpenFiles[state.gameKey]=!limitOpenFilesEnabled();save();} break;
+    case Command::UpdateDisplayWhileReading:
+        if (state.hasCard) {
+            int mode=updateDisplayWhileReading();
+            if (mode==0) state.settings.updateDisplayWhileReading.erase(state.gameKey);
+            else state.settings.updateDisplayWhileReading[state.gameKey]=mode<0;
+            save();
+        }
+        break;
     case Command::Report: pending=Action::Report; break;
     case Command::RepairStorage: pending=Action::RepairStorage;break;
     case Command::ReadCard: pending=Action::ReadCard; break;
@@ -587,7 +604,7 @@ Action update() {
             Command value=hit.command;int argument=hit.argument;command(value,argument);changed=true;break;
         }
     }
-    if (changed || ((state.page==Page::Home || state.page==Page::PatchInfo || state.page==Page::Licenses || state.page==Page::LicenseText || state.page==Page::Cheats || state.page==Page::CheatInfo) && state.ticks%4==0)) render();
+    if (changed || ((state.page==Page::Home || state.page==Page::Menu || state.page==Page::PatchInfo || state.page==Page::Licenses || state.page==Page::LicenseText || state.page==Page::Cheats || state.page==Page::CheatInfo) && state.ticks%4==0)) render();
     return pending;
 }
 const std::vector<std::string>& selectedPatches() { return state.selected; }
@@ -627,6 +644,10 @@ bool limitOpenFilesEnabled() {
     if (!state.hasCard) return false;
     auto found=state.settings.limitOpenFiles.find(state.gameKey);
     return found!=state.settings.limitOpenFiles.end() && found->second;
+}
+int updateDisplayWhileReading() {
+    auto found=state.settings.updateDisplayWhileReading.find(state.gameKey);
+    return found==state.settings.updateDisplayWhileReading.end()?-1:found->second;
 }
 void preparing() { go(Page::Progress);state.patchNumber=1;state.completed=state.total=0;state.elapsed=0;state.preparation={};state.stage=tr(Text::Working);state.progressDetail.clear();render(); }
 void progress(const char* stage,uint32_t completed,uint32_t total,const char* detail,uint64_t elapsed,const PreparationProgress& preparation) {

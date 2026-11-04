@@ -742,5 +742,17 @@
     "key": "cheats.prepare_confirmation",
     "original": "The selected patches must be prepared before matching cheats for the patched game. This may take a long time.\n\nPress A to prepare, or B to return.",
     "translation": "需要先準備所選修補檔，才能比對修補後版本的金手指。準備可能需要較長時間。\n\n按 A 繼續準備，按 B 返回。"
+  },
+  {
+    "index": 125,
+    "key": "menu.update_display_while_reading",
+    "original": "Synchronous read wait: {state}",
+    "translation": "同步讀取等待：{state}"
+  },
+  {
+    "index": 126,
+    "key": "common.automatic",
+    "original": "Auto",
+    "translation": "自動"
   }
 ]

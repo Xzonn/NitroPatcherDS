@@ -31,7 +31,8 @@ const char* const keys[] = {
     "storage_repair.ready","storage_repair.damaged","storage_repair.ambiguous","storage_repair.unsupported",
     "storage_repair.busy","storage_repair.memory","storage_repair.io_error","storage_repair.repaired","storage_repair.backup_path","prepare.stage.check_dsi_data","patch_error.ds_mode_xdelta",
     "menu.ap_patch","common.enabled","common.disabled","prepare.ds_mode_notice","menu.skip_rom_md5","patch_error.ds_mode_md5_required","menu.limit_open_files","common.unlimited",
-    "cheats.title","cheats.match.patched","cheats.match.original","cheats.database_missing","cheats.not_found","cheats.selected_bytes","cheats.no_description","cheats.selection_changed","cheats.too_large","cheats.clear_all","cheats.invalid_database","cheats.prepare_confirmation"
+    "cheats.title","cheats.match.patched","cheats.match.original","cheats.database_missing","cheats.not_found","cheats.selected_bytes","cheats.no_description","cheats.selection_changed","cheats.too_large","cheats.clear_all","cheats.invalid_database","cheats.prepare_confirmation",
+    "menu.update_display_while_reading","common.automatic"
 };
 static_assert(sizeof(keys)/sizeof(keys[0])==int(Text::Count));
 using Json = std::unique_ptr<cJSON,decltype(&cJSON_Delete)>;

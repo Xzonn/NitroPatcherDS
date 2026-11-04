@@ -3,6 +3,7 @@
 #include "common/nds_loader_arm9.h"
 #include "resources.h"
 #include "i18n.h"
+#include "ui.h"
 #include "../patch/nds_adapter.h"
 #include "../../vendor/nds-bootstrap/retail/arm9/include/twlClockExcludeMap.h"
 #include <nds.h>
@@ -106,6 +107,7 @@ void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, ui
     const std::string configuration =
         "[NDS-BOOTSTRAP]\nNDS_PATH=np3d:/rom.nds\nQUIT_PATH=" + appPath + "\nSAVE_RELOCATION=0\nDSI_MODE=" + std::to_string(settings.dsiMode)
         + "\nCONSOLE_MODEL=" + std::to_string(consoleModel) + "\nAP_PATCH=" + std::to_string(apPatch)
+        + "\nUPDATE_DISPLAY_WHILE_READING=" + std::to_string(ui::updateDisplayWhileReading())
         + "\nGUI_LANGUAGE=" + settings.guiLanguage + "\nBOOST_CPU=" + std::to_string(settings.boostCpu)
         + "\nBOOST_VRAM=0\nASYNC_CARD_READ=-1\nCARD_READ_DMA=-1\nDEBUG=0\nLOGGING=0\n";
     Disk configurationFile("sd:/nitro-patcher/config/nds-bootstrap.ini", "wb");

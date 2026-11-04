@@ -143,6 +143,11 @@ Settings loadSettings(const std::string& root) {
         require(cJSON_IsBool(game), "Invalid game open file limit setting");
         settings.limitOpenFiles[game->string] = cJSON_IsTrue(game);
     }
+    auto updateDisplay = cJSON_GetObjectItemCaseSensitive(json.get(), "updateDisplayWhileReading");
+    for (auto game = updateDisplay ? updateDisplay->child : nullptr; game; game = game->next) {
+        require(cJSON_IsBool(game), "Invalid game display update setting");
+        settings.updateDisplayWhileReading[game->string] = cJSON_IsTrue(game);
+    }
     auto cheats = cJSON_GetObjectItemCaseSensitive(json.get(), "cheats");
     for (auto game = cheats ? cheats->child : nullptr; game; game = game->next) {
         require(cJSON_IsObject(game), "Invalid game cheat selection");
@@ -177,6 +182,8 @@ void saveSettings(const std::string& root, const Settings& settings) {
     for (const auto& game : settings.skipRomMd5) cJSON_AddBoolToObject(skipRomMd5, game.first.c_str(), game.second);
     auto limitOpenFiles = cJSON_AddObjectToObject(json.get(), "limitOpenFiles");
     for (const auto& game : settings.limitOpenFiles) cJSON_AddBoolToObject(limitOpenFiles, game.first.c_str(), game.second);
+    auto updateDisplay = cJSON_AddObjectToObject(json.get(), "updateDisplayWhileReading");
+    for (const auto& game : settings.updateDisplayWhileReading) cJSON_AddBoolToObject(updateDisplay, game.first.c_str(), game.second);
     auto cheats = cJSON_AddObjectToObject(json.get(), "cheats");
     for (const auto& game : settings.cheats) {
         auto entry = cJSON_AddObjectToObject(cheats, game.first.c_str());
