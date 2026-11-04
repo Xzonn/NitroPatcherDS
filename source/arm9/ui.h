@@ -4,7 +4,7 @@
 #include <nds.h>
 
 namespace ui {
-enum class Action { None, Launch, Original, Report, ReadCard, ChangeCard, RepairStorage, Cheats };
+enum class Action { None, Launch, Original, Report, ReadCard, ChangeCard, RepairStorage, Cheats, ReadRom };
 struct PreparationProgress {
     uint32_t fileNumber = 0, fileCount = 0;
     int64_t remaining = -1;
@@ -15,10 +15,11 @@ void showStartup();
 void initialize();
 bool ready();
 void chooseInitialLanguage();
-bool setGame(np3d::SourcePtr card, const sNDSHeader& header);
+bool setGame(np3d::SourcePtr card, const sNDSHeader& header, bool romFile = false);
 void noCard(bool missing = false, bool reinsert = false);
 Action update();
 const std::vector<std::string>& selectedPatches();
+const std::string& selectedRom();
 bool apPatchEnabled();
 bool skipRomMd5Enabled();
 bool limitOpenFilesEnabled();

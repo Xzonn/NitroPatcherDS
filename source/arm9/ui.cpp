@@ -13,18 +13,18 @@ namespace {
 constexpr const char* Root = "sd:/nitro-patcher";
 constexpr uint16_t White = 0xffff, Black = 0x8000, Gray = 0xe739;
 constexpr int Visible = 6;
-enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading, Storage, Confirm, Cheats, CheatInfo };
-enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage, ApPatch, SkipRomMd5, LimitOpenFiles, UpdateDisplayWhileReading, Cheats, ToggleCheat, CheatInfo, ClearCheats };
+enum class Page { Home, Language, Menu, PatchInfo, About, Licenses, LicenseText, Progress, Report, Empty, NoCard, Error, Details, Loading, Storage, Confirm, Cheats, CheatInfo, Roms };
+enum class Command { Toggle, Start, Menu, Info, Back, Language, Original, Report, About, Licenses, ReadLicense, PickLanguage, Previous, Next, Up, Down, Details, ReadCard, ChangeCard, RepairStorage, ApPatch, SkipRomMd5, LimitOpenFiles, UpdateDisplayWhileReading, Cheats, ToggleCheat, CheatInfo, ClearCheats, Roms, ReadRom };
 constexpr Text MenuLabels[] = {Text::Cheats,Text::ApPatch,Text::SkipRomMd5,Text::LimitOpenFiles,
 #if !NP3D_SLOT2
     Text::UpdateDisplayWhileReading,
 #endif
-    Text::Original,Text::ChangeCard,Text::Report,Text::Language,Text::StorageTitle,Text::About};
+    Text::Original,Text::ChangeCard,Text::SelectRom,Text::Report,Text::Language,Text::StorageTitle,Text::About};
 constexpr Command MenuCommands[] = {Command::Cheats,Command::ApPatch,Command::SkipRomMd5,Command::LimitOpenFiles,
 #if !NP3D_SLOT2
     Command::UpdateDisplayWhileReading,
 #endif
-    Command::Original,Command::ChangeCard,Command::Report,Command::Language,Command::RepairStorage,Command::About};
+    Command::Original,Command::ChangeCard,Command::Roms,Command::Report,Command::Language,Command::RepairStorage,Command::About};
 constexpr int MenuCount = sizeof(MenuCommands)/sizeof(MenuCommands[0]);
 constexpr const char* Licenses[] = {"NitroPatcherDS.txt", "md4c.txt", "fmt.txt", "Gulim-OFL.txt", "Gulim-AUTHORS.txt", "liblzma.txt"};
 constexpr int LicenseCount = sizeof(Licenses)/sizeof(Licenses[0]);
@@ -49,6 +49,8 @@ struct State {
     int cheatFolder = -1, cheatFocus = 0, cheatTop = 0;
     np3d::PatchInfo info;
     std::vector<std::string> patches, selected;
+    std::vector<std::string> roms;
+    std::string romPath;
     std::vector<std::u16string> lines;
     tNDSBanner banner = {};
     std::array<std::array<uint16_t,128>,8> titles = {};
@@ -254,6 +256,16 @@ void render() {
         softkey(hint("X",Text::Menu),8,178,76,Command::Menu);
         softkey(hint("Y",Text::Info),90,178,76,Command::Info);
         text(1,"L / R  < >",180,178); break;
+    case Page::Roms:
+        heading(tr(Text::SelectRom)); range(state.roms.size());
+        if (state.roms.empty()) paragraph(1,tr(Text::NoRoms),8,40);
+        for (int row=0;row<Visible && state.top+row<int(state.roms.size());row++) {
+            int index=state.top+row,y=32+row*20;
+            if (index==state.focus) fill(1,8,y,240,20,Gray);
+            scrollText(1,filename(state.roms[index]),16,y+4,224,state.focus==index);
+            hits.push_back({8,y,240,20,Command::ReadRom,index});
+        }
+        backKey(); break;
     case Page::Language:
         heading(tr(Text::Language)); range(LanguageCount);
         for (int row=0;row<Visible && state.top+row<LanguageCount;row++) {
@@ -400,7 +412,7 @@ void returnHome() { go(!state.hasCard?Page::NoCard:state.patches.empty()?Page::E
 void scrollLines(int distance) { state.textTop=std::clamp(state.textTop+distance,0,std::max(0,int(state.lines.size())-7)); }
 void move(int distance,bool page=false) {
     if (state.page==Page::PatchInfo || state.page==Page::Details || state.page==Page::LicenseText || state.page==Page::CheatInfo) {scrollLines(distance*(page?7:1));return;}
-    int count=state.page==Page::Language?LanguageCount:state.page==Page::Menu?MenuCount:state.page==Page::Licenses?LicenseCount:state.page==Page::Cheats?state.cheatRows.size():state.page==Page::Home?state.patches.size():0;
+    int count=state.page==Page::Language?LanguageCount:state.page==Page::Menu?MenuCount:state.page==Page::Licenses?LicenseCount:state.page==Page::Cheats?state.cheatRows.size():state.page==Page::Roms?state.roms.size():state.page==Page::Home?state.patches.size():0;
     if (!count) return;
     state.focus=page?std::clamp(state.focus+distance*Visible,0,count-1):(state.focus+distance+count)%count;
     if (page) state.top=std::clamp(state.top+distance*Visible,0,std::max(0,count-Visible));
@@ -464,6 +476,10 @@ void command(Command value,int argument=0) {
     case Command::RepairStorage: pending=Action::RepairStorage;break;
     case Command::ReadCard: pending=Action::ReadCard; break;
     case Command::ChangeCard: pending=Action::ChangeCard; break;
+    case Command::Roms: state.roms=np3d::listRoms(Root);go(Page::Roms);break;
+    case Command::ReadRom:
+        if (!state.roms.empty()) {state.romPath=state.roms[argument];pending=Action::ReadRom;}
+        break;
     case Command::Menu: go(Page::Menu); break;
     case Command::About: go(Page::About); break;
     case Command::Licenses: go(Page::Licenses); break;
@@ -498,6 +514,7 @@ void command(Command value,int argument=0) {
             }
         }
         else if (state.page==Page::Language) {useLanguage(state.languageBefore);go(state.languageFrom);}
+        else if (state.page==Page::Roms) go(Page::Menu);
         else if (state.page==Page::PatchInfo) {state.page=Page::Home;state.focus=state.homeFocus;state.top=state.homeTop;state.focusTick=state.ticks;}
         else if (state.page==Page::Details) go(Page::Error);
         else if (state.page==Page::LicenseText) {state.lines.clear();go(Page::Licenses);state.focus=state.licenseFocus;state.top=std::max(0,state.focus-Visible+1);}
@@ -544,13 +561,13 @@ void chooseInitialLanguage() {
     while (state.first) {swiWaitForVBlank();update();}
     go(Page::Loading);render();
 }
-bool setGame(np3d::SourcePtr card,const sNDSHeader& header) {
+bool setGame(np3d::SourcePtr card,const sNDSHeader& header,bool romFile) {
     state.cheats.reset();state.cheatRows.clear();
     state.hasCard=true;
     state.hasBanner=false;
     char identity[32];std::snprintf(identity,sizeof(identity),"%.4s-%04x-%02x",header.gameCode,header.headerCRC16,header.romversion);
     state.gameKey=identity;
-    state.defaultSkipRomMd5=!isDSiMode() && header.unitCode==2;
+    state.defaultSkipRomMd5=!romFile && !isDSiMode() && header.unitCode==2;
     state.selected.clear();
     for (const auto& name : state.settings.games[state.gameKey]) {
         std::string path=std::string(Root)+"/patches/"+name;
@@ -588,6 +605,7 @@ Action update() {
     else if (down&KEY_A) {
         if (state.page==Page::Home) command(Command::Toggle,state.focus);
         else if (state.page==Page::Language) command(Command::PickLanguage,state.focus);
+        else if (state.page==Page::Roms) command(Command::ReadRom,state.focus);
         else if (state.page==Page::Menu) {
             command(MenuCommands[state.focus]);
         } else if (state.page==Page::Cheats) command(Command::ToggleCheat,state.focus);
@@ -604,10 +622,11 @@ Action update() {
             Command value=hit.command;int argument=hit.argument;command(value,argument);changed=true;break;
         }
     }
-    if (changed || ((state.page==Page::Home || state.page==Page::Menu || state.page==Page::PatchInfo || state.page==Page::Licenses || state.page==Page::LicenseText || state.page==Page::Cheats || state.page==Page::CheatInfo) && state.ticks%4==0)) render();
+    if (changed || ((state.page==Page::Home || state.page==Page::Menu || state.page==Page::Roms || state.page==Page::PatchInfo || state.page==Page::Licenses || state.page==Page::LicenseText || state.page==Page::Cheats || state.page==Page::CheatInfo) && state.ticks%4==0)) render();
     return pending;
 }
 const std::vector<std::string>& selectedPatches() { return state.selected; }
+const std::string& selectedRom() { return state.romPath; }
 const np3d::CheatSelection& selectedCheats() {
     static const np3d::CheatSelection empty;
     auto found=state.settings.cheats.find(cheatKey());

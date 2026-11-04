@@ -8,6 +8,7 @@ for directory in ("ui", "languages", "licenses"):
     os.makedirs(f"build/nitrofs/{directory}", exist_ok=True)
 shutil.copyfile("out/nds-bootstrap.nds", "build/nitrofs/bootstrap.nds")
 shutil.copyfile("assets/startup.bin", "build/nitrofs/ui/startup.bin")
+shutil.copyfile("build/rom-save-types.bin", "build/nitrofs/rom-save-types.bin")
 for path in sorted(glob.glob("texts/*.json")):
     shutil.copyfile(path, f"build/nitrofs/languages/{path[6:]}")
 for path, name in (

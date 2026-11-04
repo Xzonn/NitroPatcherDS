@@ -13,6 +13,7 @@ struct PatchInfo {
 };
 PatchInfo readPatchMetadata(const std::string& data);
 PatchInfo inspectPatch(const std::string& path);
+std::vector<std::string> listRoms(const std::string& root);
 
 struct Settings {
     std::string language;

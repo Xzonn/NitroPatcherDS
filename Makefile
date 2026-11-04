@@ -22,7 +22,14 @@ build/ds_arm9_crt0.o: vendor/devkitarm-crtls/ds_arm9_crt0.s
 	mkdir -p build
 	$(DEVKITARM)/bin/arm-none-eabi-gcc -g -mthumb-interwork -march=armv5te -c $< -o $@
 
-launcher: patch-arm9 bootstrap build/ds_arm9_crt0.o
+build/rom-save-types: source/build_save_types.cpp vendor/TWiLightMenu/universal/include/ROMList.h
+	mkdir -p build
+	g++ $< -o $@
+
+build/rom-save-types.bin: build/rom-save-types
+	$< $@
+
+launcher: patch-arm9 bootstrap build/ds_arm9_crt0.o build/rom-save-types.bin
 	mkdir -p build
 	printf '%s %s\n' "$(DIAGNOSTIC)" "$(LAUNCH_TRACE)" > build/launcher-mode.next
 	if ! cmp -s build/launcher-mode.next build/launcher-mode; then $(MAKE) -C vendor/TWiLightMenu/slot1launch clean; fi

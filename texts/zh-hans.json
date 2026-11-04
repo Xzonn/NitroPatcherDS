@@ -754,5 +754,17 @@
     "key": "common.automatic",
     "original": "Auto",
     "translation": "自动"
+  },
+  {
+    "index": 127,
+    "key": "menu.select_rom",
+    "original": "Test ROM from SD",
+    "translation": "从 SD 卡测试 ROM"
+  },
+  {
+    "index": 128,
+    "key": "rom_selection.empty",
+    "original": "Place original .nds ROMs in nitro-patcher/roms/ on the SD card.",
+    "translation": "请将原始 .nds ROM 放到 SD 卡的 nitro-patcher/roms/ 目录。"
   }
 ]

@@ -4,6 +4,7 @@
 #include "resources.h"
 #include "i18n.h"
 #include "ui.h"
+#include "rom_source.h"
 #include "../patch/nds_adapter.h"
 #include "../../vendor/nds-bootstrap/retail/arm9/include/twlClockExcludeMap.h"
 #include <nds.h>
@@ -34,7 +35,7 @@ GameLaunchSettings gameLaunchSettings(bool dsiHardware, uint8_t unitCode, const 
     return {dsiHardware && unitCode == 2 && boost, boost, guiLanguage};
 }
 
-void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, uint32_t chipId, int consoleModel, bool apPatch, const std::string& appPath)
+void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, uint32_t chipId, int consoleModel, bool apPatch, const std::string& appPath, const std::string& sourcePath)
 {
     using namespace np3d;
     makeDirectory("sd:/nitro-patcher/config");
@@ -51,6 +52,8 @@ void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, ui
     auto& launch = launchFile.rom;
     launch.magic = NP3D_LAUNCH_MAGIC;
     launch.version = NP3D_LAUNCH_VERSION;
+    require(sourcePath.size() < sizeof(launchFile.sourcePath), "Source ROM path is too long.");
+    std::memcpy(launchFile.sourcePath, sourcePath.c_str(), sourcePath.size() + 1);
     require(appPath.size() + 2 < sizeof(launchFile.returnPath), "App path is too long for returning from a game.");
     std::memcpy(launchFile.returnPath, appPath.c_str(), appPath.size() + 1);
     launch.romSize = prepared.rom->size;
@@ -64,7 +67,7 @@ void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, ui
     sNDSHeader virtualHeader;
     prepared.rom->read(0, &virtualHeader, sizeof(virtualHeader));
     auto settings = gameLaunchSettings(isDSiMode(), virtualHeader.unitCode, reinterpret_cast<const char*>(&launch.cardCode), ui::languageCodes[ui::currentLanguage()]);
-    {
+    if (sourcePath.empty()) {
         auto& header = *reinterpret_cast<Header*>(prefix.data());
         if (settings.dsiMode) {
             launch.twlStart = (uint32_t(header.offset_0x90) >> 16) * 0x80000u;
@@ -98,14 +101,17 @@ void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, ui
     }
     launch.mapCluster = cluster(prepared.directory + "/map.bin", &launch.mapSize);
     launch.dataCluster = cluster(prepared.directory + "/data.bin", &launch.dataSize);
-    launch.prefixCluster = cluster(prepared.directory + "/card-prefix.bin");
+    launch.prefixCluster = cluster(sourcePath.empty() ? prepared.directory + "/card-prefix.bin" : sourcePath);
+    if (!sourcePath.empty()) launch.prefixCluster |= NP3D_SOURCE_FILE;
     {
         Disk descriptor("sd:/nitro-patcher/config/launch.bin", "wb");
         descriptor.write(0, &launchFile, sizeof(launchFile));
         descriptor.sync();
     }
+    std::string savePath = sourcePath.empty() ? "" : prepareRomSave(*reinterpret_cast<sNDSHeader*>(prefix.data()));
     const std::string configuration =
-        "[NDS-BOOTSTRAP]\nNDS_PATH=np3d:/rom.nds\nQUIT_PATH=" + appPath + "\nSAVE_RELOCATION=0\nDSI_MODE=" + std::to_string(settings.dsiMode)
+        "[NDS-BOOTSTRAP]\nNDS_PATH=np3d:/rom.nds\nQUIT_PATH=" + appPath + "\nSAVE_RELOCATION=" + std::to_string(!sourcePath.empty())
+        + "\nSAV_PATH=" + savePath + "\nDSI_MODE=" + std::to_string(settings.dsiMode)
         + "\nCONSOLE_MODEL=" + std::to_string(consoleModel) + "\nAP_PATCH=" + std::to_string(apPatch)
         + "\nUPDATE_DISPLAY_WHILE_READING=" + std::to_string(ui::updateDisplayWhileReading())
         + "\nGUI_LANGUAGE=" + settings.guiLanguage + "\nBOOST_CPU=" + std::to_string(settings.boostCpu)

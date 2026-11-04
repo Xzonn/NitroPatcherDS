@@ -9,6 +9,7 @@
 #endif
 #include "launch_engine.h"
 #include "card_source.h"
+#include "rom_source.h"
 #include "progress.h"
 #include "environment.h"
 #include "patched_launch.h"
@@ -123,6 +124,7 @@ int main(int argc,char** argv) {
     const auto* gameHeader=reinterpret_cast<const sNDSHeader*>(header);
     np3d::SourcePtr persistentCard;
     uint32_t persistentChipId=0;
+    std::string romPath;
 
     while (true) {
         swiWaitForVBlank();
@@ -135,10 +137,12 @@ int main(int argc,char** argv) {
         }
         if (action==ui::Action::RepairStorage) {ui::repairStorage();continue;}
         if (action==ui::Action::ChangeCard) {
+            romPath.clear();
             persistentCard.reset();persistentChipId=0;hasCard=false;reinsert=true;
             readCard=true;continue;
         }
         if (action==ui::Action::ReadCard) {
+            romPath.clear();
             persistentCard.reset();persistentChipId=0;hasCard=false;
             if (isDSiMode()) {
                 if (REG_SCFG_MC & BIT(0)) {ui::noCard(!automatic,reinsert);continue;}
@@ -173,26 +177,39 @@ int main(int argc,char** argv) {
             if (!hasCard) persistentChipId=0;
             continue;
         }
+        if (action==ui::Action::ReadRom) {
+            sNDSHeader selectedHeader;
+            std::string error;
+            auto rom=openRomFile(ui::selectedRom(),selectedHeader,error);
+            if (!rom) {ui::error(error);continue;}
+            std::memcpy(header,&selectedHeader,sizeof(header));
+            romPath=ui::selectedRom();persistentChipId=0;
+            persistentCard=rom;hasCard=ui::setGame(rom,*gameHeader,true);reinsert=false;
+            if (!hasCard) {persistentCard.reset();romPath.clear();}
+            continue;
+        }
         if (!hasCard) continue;
-        if (isDSiMode() && !resetGameCard()) {
+        if (romPath.empty() && isDSiMode() && !resetGameCard()) {
             persistentCard.reset();persistentChipId=0;hasCard=false;reinsert=true;
             ui::noCard(true,true);ui::error("Cannot reset the Game Card");continue;
         }
         alignas(4) unsigned char currentHeader[0x200];
-        if (persistentCard) {
-            if (!gameCardMatches(persistentCard)) {
-                persistentCard.reset();persistentChipId=0;hasCard=false;reinsert=true;
-                ui::noCard(true,true);continue;
-            }
-        } else {
-            cardReadHeader(currentHeader);
-            if (std::memcmp(header,currentHeader,sizeof(header))!=0) {
-                hasCard=false;reinsert=true;ui::noCard(true,true);continue;
+        if (romPath.empty()) {
+            if (persistentCard) {
+                if (!gameCardMatches(persistentCard)) {
+                    persistentCard.reset();persistentChipId=0;hasCard=false;reinsert=true;
+                    ui::noCard(true,true);continue;
+                }
+            } else {
+                cardReadHeader(currentHeader);
+                if (std::memcmp(header,currentHeader,sizeof(header))!=0) {
+                    hasCard=false;reinsert=true;ui::noCard(true,true);continue;
+                }
             }
         }
-        if (action==ui::Action::Cheats || (action==ui::Action::Launch && (!ui::selectedPatches().empty() || !ui::selectedCheats().enabled.empty())) || !isDSiMode()) {
+        if (!romPath.empty() || action==ui::Action::Cheats || (action==ui::Action::Launch && (!ui::selectedPatches().empty() || !ui::selectedCheats().enabled.empty())) || !isDSiMode()) {
             auto paths=action==ui::Action::Original?std::vector<std::string>():ui::selectedPatches();
-            bool dsOnly=!isDSiMode() && gameHeader->unitCode==2;
+            bool dsOnly=romPath.empty() && !isDSiMode() && gameHeader->unitCode==2;
             bool skipRomMd5=ui::skipRomMd5Enabled();
             np3d::setMapFileLimit(ui::limitOpenFilesEnabled());
             if (dsOnly && std::any_of(paths.begin(),paths.end(),[](const std::string& path){return !np3d::isDeltaPatch(path);})
@@ -236,7 +253,7 @@ int main(int argc,char** argv) {
                     else {
                         error=ui::cheatError(np3d::writeCheats("sd:/nitro-patcher",prepared.rom,card,
                             action==ui::Action::Original?np3d::CheatSelection():ui::selectedCheats(),isDSiMode()?0x4000:0x1C00));
-                        if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel,ui::apPatchEnabled(),filename);finishPatchProgress(reused);}
+                        if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel,ui::apPatchEnabled(),filename,romPath);finishPatchProgress(reused);}
                         else np3d::setProgressHandler(nullptr);
                     }
                 }

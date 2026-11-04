@@ -50,6 +50,8 @@ try {
             [void]$package.CreateEntry("nitro-patcher/cheats/")
             [void]$package.CreateEntry("nitro-patcher/patches/")
             [void]$package.CreateEntry("nitro-patcher/patches/Place patches here")
+            [void]$package.CreateEntry("nitro-patcher/roms/")
+            [void]$package.CreateEntry("nitro-patcher/roms/Place original ROMs here")
             if ($target.Entry.StartsWith("nitro-patcher/app/") -or $target.Package -eq "NitroPatcher3DS.zip") {
                 [void]$package.CreateEntry("nitro-patcher/app/")
             }

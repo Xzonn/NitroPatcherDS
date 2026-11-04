@@ -754,5 +754,17 @@
     "key": "common.automatic",
     "original": "Auto",
     "translation": "자동"
+  },
+  {
+    "index": 127,
+    "key": "menu.select_rom",
+    "original": "Test ROM from SD",
+    "translation": "SD 카드의 ROM 테스트"
+  },
+  {
+    "index": 128,
+    "key": "rom_selection.empty",
+    "original": "Place original .nds ROMs in nitro-patcher/roms/ on the SD card.",
+    "translation": "원본 .nds ROM을 SD 카드의 nitro-patcher/roms/ 폴더에 넣어 주세요."
   }
 ]

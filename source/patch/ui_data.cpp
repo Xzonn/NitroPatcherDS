@@ -11,6 +11,8 @@ extern "C" {
 #include <cstdlib>
 #include <cmath>
 #include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 namespace np3d {
 namespace {
@@ -107,6 +109,24 @@ PatchInfo inspectPatch(const std::string& path) {
         result.readme = name[7] == 'm' ? plainMarkdown(content) : content;
         break;
     }
+    return result;
+}
+
+std::vector<std::string> listRoms(const std::string& root) {
+    makeDirectory(root + "/roms");
+    DIR* directory = opendir((root + "/roms").c_str());
+    require(directory, "Cannot open ROM directory");
+    std::vector<std::string> result;
+    while (dirent* entry = readdir(directory)) {
+        std::string name = entry->d_name;
+        if (name.size() < 4 || normalize(name.substr(name.size() - 4)) != ".nds") continue;
+        std::string path = root + "/roms/" + name;
+        struct stat info;
+        require(stat(path.c_str(), &info) == 0, "Cannot inspect ROM file: " + path);
+        if (S_ISREG(info.st_mode)) result.push_back(path);
+    }
+    require(closedir(directory) == 0, "Cannot close ROM directory");
+    std::sort(result.begin(), result.end());
     return result;
 }
 
