@@ -766,5 +766,17 @@
     "key": "rom_selection.empty",
     "original": "Place original .nds ROMs in nitro-patcher/roms/ on the SD card.",
     "translation": "元の.nds ROMをSDカードのnitro-patcher/roms/に入れてください。"
+  },
+  {
+    "index": 129,
+    "key": "menu.ap_patch.default",
+    "original": "Default",
+    "translation": "標準"
+  },
+  {
+    "index": 130,
+    "key": "menu.ap_patch.force",
+    "original": "Forced",
+    "translation": "強制"
   }
 ]

@@ -35,7 +35,7 @@ GameLaunchSettings gameLaunchSettings(bool dsiHardware, uint8_t unitCode, const 
     return {dsiHardware && unitCode == 2 && boost, boost, guiLanguage};
 }
 
-void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, uint32_t chipId, int consoleModel, bool apPatch, const std::string& appPath, const std::string& sourcePath)
+void writePatchedLaunch(const np3d::Prepared& prepared, np3d::SourcePtr card, uint32_t chipId, int consoleModel, int apPatch, const std::string& appPath, const std::string& sourcePath)
 {
     using namespace np3d;
     makeDirectory("sd:/nitro-patcher/config");

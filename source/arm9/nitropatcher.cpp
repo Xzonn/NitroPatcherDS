@@ -253,7 +253,7 @@ int main(int argc,char** argv) {
                     else {
                         error=ui::cheatError(np3d::writeCheats("sd:/nitro-patcher",prepared.rom,card,
                             action==ui::Action::Original?np3d::CheatSelection():ui::selectedCheats(),isDSiMode()?0x4000:0x1C00));
-                        if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel,ui::apPatchEnabled(),filename,romPath);finishPatchProgress(reused);}
+                        if (error.empty()) {writePatchedLaunch(prepared,card,chipId,consoleModel,ui::apPatchMode(),filename,romPath);finishPatchProgress(reused);}
                         else np3d::setProgressHandler(nullptr);
                     }
                 }

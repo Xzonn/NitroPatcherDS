@@ -20,7 +20,7 @@ void noCard(bool missing = false, bool reinsert = false);
 Action update();
 const std::vector<std::string>& selectedPatches();
 const std::string& selectedRom();
-bool apPatchEnabled();
+int apPatchMode();
 bool skipRomMd5Enabled();
 bool limitOpenFilesEnabled();
 int updateDisplayWhileReading();

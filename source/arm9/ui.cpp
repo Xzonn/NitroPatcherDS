@@ -284,7 +284,7 @@ void render() {
         for (int row=0;row<Visible && state.top+row<MenuCount;row++) {
             int index=state.top+row,y=32+row*20;
             if (state.focus==index) fill(1,8,y,240,20,Gray);
-            std::string label=MenuCommands[index]==Command::ApPatch?format(Text::ApPatch,fmt::arg("state",tr(apPatchEnabled()?Text::Enabled:Text::Disabled)))
+            std::string label=MenuCommands[index]==Command::ApPatch?format(Text::ApPatch,fmt::arg("state",tr(apPatchMode()==2?Text::ApPatchForce:apPatchMode()==1?Text::ApPatchDefault:Text::Disabled)))
                 :MenuCommands[index]==Command::SkipRomMd5?format(Text::SkipRomMd5,fmt::arg("state",tr(skipRomMd5Enabled()?Text::Enabled:Text::Disabled)))
                 :MenuCommands[index]==Command::LimitOpenFiles?format(Text::LimitOpenFiles,fmt::arg("limit",limitOpenFilesEnabled()?"16":tr(Text::Unlimited)))
                 :MenuCommands[index]==Command::UpdateDisplayWhileReading?format(Text::UpdateDisplayWhileReading,fmt::arg("state",tr(updateDisplayWhileReading()<0?Text::Automatic:updateDisplayWhileReading()?Text::Enabled:Text::Disabled))):tr(MenuLabels[index]);
@@ -459,7 +459,7 @@ void command(Command value,int argument=0) {
         }
         break;
     case Command::ApPatch:
-        if (state.hasCard) {state.settings.apPatch[state.gameKey]=!apPatchEnabled();save();} break;
+        if (state.hasCard) {int mode=apPatchMode();state.settings.apPatch[state.gameKey]=mode==1?0:mode==0?2:1;save();} break;
     case Command::SkipRomMd5:
         if (state.hasCard) {state.settings.skipRomMd5[state.gameKey]=!skipRomMd5Enabled();save();} break;
     case Command::LimitOpenFiles:
@@ -650,9 +650,9 @@ void showCheats(np3d::SourcePtr rom,np3d::SourcePtr card) {
     if (state.cheatStatus==np3d::CheatStatus::Ready) state.cheats->restore(selectedCheats());
     state.cheatRows=state.cheats->children();go(Page::Cheats);render();
 }
-bool apPatchEnabled() {
+int apPatchMode() {
     auto found=state.settings.apPatch.find(state.gameKey);
-    return found==state.settings.apPatch.end() || found->second;
+    return found==state.settings.apPatch.end()?1:found->second;
 }
 bool skipRomMd5Enabled() {
     if (!state.hasCard) return false;

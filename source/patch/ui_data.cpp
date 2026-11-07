@@ -150,8 +150,9 @@ Settings loadSettings(const std::string& root) {
     }
     auto apPatch = cJSON_GetObjectItemCaseSensitive(json.get(), "apPatch");
     for (auto game = apPatch ? apPatch->child : nullptr; game; game = game->next) {
-        require(cJSON_IsBool(game), "Invalid game anti-piracy setting");
-        settings.apPatch[game->string] = cJSON_IsTrue(game);
+        require(cJSON_IsBool(game) || (cJSON_IsNumber(game) && (game->valuedouble == 0 || game->valuedouble == 1 || game->valuedouble == 2)),
+            "Invalid game anti-piracy setting");
+        settings.apPatch[game->string] = cJSON_IsBool(game) ? cJSON_IsTrue(game) : game->valueint;
     }
     auto skipRomMd5 = cJSON_GetObjectItemCaseSensitive(json.get(), "skipRomMd5");
     for (auto game = skipRomMd5 ? skipRomMd5->child : nullptr; game; game = game->next) {
@@ -197,7 +198,7 @@ void saveSettings(const std::string& root, const Settings& settings) {
         for (const auto& patch : game.second) cJSON_AddItemToArray(array, cJSON_CreateString(patch.c_str()));
     }
     auto apPatch = cJSON_AddObjectToObject(json.get(), "apPatch");
-    for (const auto& game : settings.apPatch) cJSON_AddBoolToObject(apPatch, game.first.c_str(), game.second);
+    for (const auto& game : settings.apPatch) cJSON_AddNumberToObject(apPatch, game.first.c_str(), game.second);
     auto skipRomMd5 = cJSON_AddObjectToObject(json.get(), "skipRomMd5");
     for (const auto& game : settings.skipRomMd5) cJSON_AddBoolToObject(skipRomMd5, game.first.c_str(), game.second);
     auto limitOpenFiles = cJSON_AddObjectToObject(json.get(), "limitOpenFiles");

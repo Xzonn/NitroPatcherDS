@@ -18,7 +18,7 @@ enum class Text {
     StorageCompare, StorageBackup, StorageRepair, StorageVerify, StorageCopy, StorageDifferences,
     StorageFsInfo, StorageClean, StorageReady, StorageDamaged, StorageAmbiguous, StorageUnsupported,
     StorageBusy, StorageMemory, StorageIoError, StorageRepaired, StorageBackupPath, CheckDSiData, DSModeXdelta, ApPatch, Enabled, Disabled, DSModeNotice, SkipRomMd5, DSModeMd5Required, LimitOpenFiles, Unlimited,
-    Cheats, CheatPatched, CheatOriginal, CheatMissing, CheatNotFound, CheatSelected, CheatNoDescription, CheatChanged, CheatTooLarge, CheatClear, CheatInvalid, CheatPrepare, UpdateDisplayWhileReading, Automatic, SelectRom, NoRoms, Count
+    Cheats, CheatPatched, CheatOriginal, CheatMissing, CheatNotFound, CheatSelected, CheatNoDescription, CheatChanged, CheatTooLarge, CheatClear, CheatInvalid, CheatPrepare, UpdateDisplayWhileReading, Automatic, SelectRom, NoRoms, ApPatchDefault, ApPatchForce, Count
 };
 extern int LanguageCount;
 extern std::vector<std::string> languageCodes;
