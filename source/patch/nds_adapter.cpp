@@ -30,12 +30,13 @@ struct Cookie {
     uint32_t position = 0;
 };
 
-static std::vector<NamedFile>* files;
+static FileTable* files;
 static std::vector<bool> visitedFiles;
 static bool canonicalNames;
 static std::vector<NamedDirectory>* tree;
 static std::vector<uint32_t> directoryIndices;
 static uint32_t currentDirectory;
+static uint32_t romSize;
 
 static void directory(const char* prefix, unsigned int id, unsigned int count, bool entering) {
     if (!entering) return;
@@ -68,7 +69,8 @@ static void visit(const char* prefix, const char* name, unsigned int id, unsigne
         patchRequire(decoded.find_first_of("/\\") == std::string::npos && decoded != "." && decoded != "..", "Invalid FNT path component");
         (*tree)[parent].files.push_back(files->size());
     }
-    files->push_back({"data" + path, id, offset, length, canonicalNames ? name : "", parent});
+    patchRequire(offset <= romSize && length <= romSize - offset, "NDS file outside ROM: data" + path);
+    files->push_back({"data" + path, id, nullptr, id, offset, length, canonicalNames ? name : "", parent});
 }
 
 #ifdef ARM9
@@ -102,7 +104,7 @@ static int seekCookie(void* opaque, off64_t* offset, int origin) {
 }
 #endif
 
-std::vector<NamedFile> enumerateFiles(SourcePtr source, const Header& value, bool canonical,
+FileTable enumerateFiles(SourcePtr source, const Header& value, Workspace& work, bool canonical,
     std::vector<NamedDirectory>* outputDirectories) {
     Cookie cookie{source};
 #ifdef ARM9
@@ -114,6 +116,7 @@ std::vector<NamedFile> enumerateFiles(SourcePtr source, const Header& value, boo
     require(fNDS, "Cannot open NDS directory reader");
     std::unique_ptr<FILE, decltype(&std::fclose)> reader(fNDS, std::fclose);
     header = value;
+    romSize = source->size;
     canonicalNames = canonical;
     std::vector<NamedDirectory> localDirectories;
     tree = canonical ? (outputDirectories ? outputDirectories : &localDirectories) : nullptr;
@@ -121,7 +124,7 @@ std::vector<NamedFile> enumerateFiles(SourcePtr source, const Header& value, boo
     if (tree) tree->clear();
     directories.clear();
     visitedFiles.assign(uint32_t(header.fat_size) / 8, false);
-    std::vector<NamedFile> result;
+    FileTable result(work, source);
     files = &result;
     ndsFileVisitor = visit;
     ndsDirectoryVisitor = tree ? directory : nullptr;
@@ -134,8 +137,6 @@ std::vector<NamedFile> enumerateFiles(SourcePtr source, const Header& value, boo
     tree = nullptr;
     directoryIndices.clear();
     directoryIndices.shrink_to_fit();
-    for (const auto& file : result) patchRequire(file.offset <= source->size && file.length <= source->size - file.offset,
-        "NDS file outside ROM: " + file.name);
     return result;
 }
 

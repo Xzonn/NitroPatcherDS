@@ -41,7 +41,7 @@ CFLAGS := -O2 -g -Wall -ffunction-sections -fdata-sections $(ARCH)
 CXXFLAGS := $(CFLAGS) -std=gnu++17 -fexceptions
 VPATH := $(CURDIR):$(COMMON):$(MINIZ):$(XDELTA):$(CJSON):$(MBEDTLS)/library:$(MD4C):$(ROOT)/vendor/BlzHelper/native
 CFILES := miniz.c miniz_zip.c miniz_tinfl.c cJSON.c xdelta3.c md5.c sha1.c sha256.c md.c aes.c platform_util.c md4c.c entity.c
-CPPFILES := core.cpp delta.cpp package.cpp cache.cpp rom.cpp twl.cpp twl_complete.cpp arm9_blz.cpp blz.cpp nds_adapter.cpp ndsextract.cpp fnt.cpp filename.cpp encryption.cpp crc.cpp environment.cpp ui_data.cpp preparation_progress.cpp cheats.cpp
+CPPFILES := core.cpp delta.cpp package.cpp cache.cpp rom.cpp file_table.cpp twl.cpp twl_complete.cpp arm9_blz.cpp blz.cpp nds_adapter.cpp ndsextract.cpp fnt.cpp filename.cpp encryption.cpp crc.cpp environment.cpp ui_data.cpp preparation_progress.cpp cheats.cpp
 OBJECTS := $(addprefix $(BUILD)/,$(CFILES:.c=.o) $(CPPFILES:.cpp=.o))
 OBJECTS += $(BUILD)/format.o
 OBJECTS += $(BUILD)/twl_cheats.o

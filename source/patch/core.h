@@ -126,6 +126,7 @@ struct Workspace {
     SourcePtr card;
     std::shared_ptr<Disk> payload;
     unsigned int next = 0;
+    size_t directoryMemory = 8 * 1024 * 1024;
     std::string error;
     bool dsOnly = false;
     Workspace(const std::string& directory, SourcePtr card, bool dsOnly = false);

@@ -12,7 +12,7 @@
 namespace np3d {
 
 struct Allocation { unsigned_int start, end; };
-struct RomFile { std::string name; uint32_t id; SourcePtr data; uint32_t original; uint32_t offset = 0, size = 0; };
+using RomFile = FileEntry;
 
 static std::string overlayPath(unsigned int cpu, uint32_t id) {
     char name[48];
@@ -32,7 +32,7 @@ static std::vector<OverlayEntry> readOverlays(SourcePtr data) {
     return table;
 }
 
-static uint32_t addNamedFile(std::vector<NamedFile>& names, std::vector<NamedDirectory>& directories, const std::string& path) {
+static uint32_t addNamedFile(FileTable& names, std::vector<NamedDirectory>& directories, const std::string& path) {
     std::vector<std::string> parts;
     for (size_t first = 0;;) {
         size_t end = path.find('/', first);
@@ -49,13 +49,13 @@ static uint32_t addNamedFile(std::vector<NamedFile>& names, std::vector<NamedDir
         patchRequire(!name.empty() && name != "." && name != ".." && name.find('\0') == std::string::npos, "Invalid NitroFS path: " + path);
         std::string key = normalize(name);
         for (auto file : directories[parent].files)
-            patchRequire(normalize(decodeName(names[file].rawName)) != key, "ROM path conflicts with a file: " + path);
+            patchRequire(normalize(decodeName(names.get(file).rawName)) != key, "ROM path conflicts with a file: " + path);
         uint32_t child = UINT32_MAX;
         for (auto folder : directories[parent].children) if (normalize(directories[folder].name) == key) { child = folder; break; }
         if (index + 1 == parts.size()) {
             patchRequire(child == UINT32_MAX, "ROM path conflicts with a directory: " + path);
             uint32_t file = names.size();
-            names.push_back({output + "/" + name, UINT32_MAX, 0, 0, encodeName(name), parent});
+            names.push_back({output + "/" + name, UINT32_MAX, nullptr, UINT32_MAX, 0, 0, encodeName(name), parent});
             directories[parent].files.push_back(file);
             return file;
         }
@@ -72,15 +72,18 @@ static uint32_t addNamedFile(std::vector<NamedFile>& names, std::vector<NamedDir
     fail("Invalid NitroFS path: " + path);
 }
 
-static SourcePtr layoutFiles(Workspace& work, SourcePtr input, std::vector<RomFile>& files,
-    std::vector<NamedFile>& names, std::vector<NamedDirectory>& directories,
+static SourcePtr layoutFiles(Workspace& work, SourcePtr input, FileTable& files,
+    FileTable& names, std::vector<NamedDirectory>& directories,
     const std::vector<uint32_t>& positions, const std::vector<uint32_t>& addedOverlays, std::vector<Allocation>& allocations,
     std::vector<uint32_t>& order, std::vector<uint32_t>& oldIds) {
     std::vector<bool> named(allocations.size(), false), overlays(allocations.size(), false);
     std::vector<uint32_t> existing(allocations.size(), UINT32_MAX);
-    for (const auto& name : names) if (name.id != UINT32_MAX) named[name.id] = true;
+    for (uint32_t index = 0; index < names.size(); index++) {
+        auto name = names.get(index);
+        if (name.id != UINT32_MAX) named[name.id] = true;
+    }
     for (uint32_t index = 0; index < files.size(); index++) {
-        const auto& file = files[index];
+        auto file = files.get(index);
         if (file.id == 0xffff || file.id == UINT32_MAX) continue;
         existing[file.id] = index;
         if (file.name.compare(0, 8, "overlay/") == 0) overlays[file.id] = true;
@@ -104,7 +107,7 @@ static SourcePtr layoutFiles(Workspace& work, SourcePtr input, std::vector<RomFi
         uint32_t index = pending.back();
         pending.pop_back();
         auto& folder = directories[index];
-        std::sort(folder.files.begin(), folder.files.end(), [&](uint32_t a, uint32_t b) { return names[a].rawName < names[b].rawName; });
+        std::sort(folder.files.begin(), folder.files.end(), [&](uint32_t a, uint32_t b) { return names.get(a).rawName < names.get(b).rawName; });
         std::sort(folder.children.begin(), folder.children.end(), [&](uint32_t a, uint32_t b) { return directories[a].rawName < directories[b].rawName; });
         firstFiles[index] = order.size();
         orderedDirectories.push_back(index);
@@ -114,11 +117,14 @@ static SourcePtr layoutFiles(Workspace& work, SourcePtr input, std::vector<RomFi
     patchRequire(order.size() <= 0xf000, "Filesystem file IDs exceed 0xEFFF");
     oldIds.assign(allocations.size(), UINT32_MAX);
     for (uint32_t id = 0; id < order.size(); id++) {
-        uint32_t old = files[order[id]].id;
+        uint32_t old = files.get(order[id]).id;
         if (old != UINT32_MAX) oldIds[old] = id;
     }
-    for (auto& file : files) if (file.id != 0xffff && file.id != UINT32_MAX) file.id = oldIds[file.id];
-    for (uint32_t id = 0; id < order.size(); id++) files[order[id]].id = id;
+    for (uint32_t index = 0; index < files.size(); index++) {
+        auto file = files.get(index);
+        if (file.id != 0xffff && file.id != UINT32_MAX) files.setId(index, oldIds[file.id]);
+    }
+    for (uint32_t id = 0; id < order.size(); id++) files.setId(order[id], id);
     std::vector<uint32_t> directoryIds(directories.size());
     for (uint32_t index = 0; index < orderedDirectories.size(); index++) directoryIds[orderedDirectories[index]] = 0xf000 + index;
     auto table = std::make_shared<Disk>(work.directory + "/fnt-" + std::to_string(work.next++) + ".bin", "w+b");
@@ -126,7 +132,10 @@ static SourcePtr layoutFiles(Workspace& work, SourcePtr input, std::vector<RomFi
     for (auto index : orderedDirectories) {
         const auto& folder = directories[index];
         std::vector<FntName> entries;
-        for (auto file : folder.files) entries.push_back({names[file].rawName.data(), unsigned(names[file].rawName.size()), 0});
+        std::vector<std::string> rawNames;
+        rawNames.reserve(folder.files.size());
+        for (auto file : folder.files) rawNames.push_back(names.get(file).rawName);
+        for (const auto& name : rawNames) entries.push_back({name.data(), unsigned(name.size()), 0});
         for (auto child : folder.children) entries.push_back({directories[child].rawName.data(), unsigned(directories[child].rawName.size()), uint16_t(directoryIds[child])});
         uint32_t parent = folder.parent == UINT32_MAX ? directories.size() : directoryIds[folder.parent];
         require(WriteFntDirectory(table->handle, 0, directoryIds[index], entry, firstFiles[index], parent, entries), "Cannot write NDS file name table");
@@ -192,16 +201,16 @@ static std::vector<uint8_t> bannerBytes(SourcePtr input, uint32_t hardSize) {
 }
 
 static std::shared_ptr<Map> buildCompleteRom(Workspace& work, SourcePtr input, Package& package, CompleteTwl& twl,
-    Header& h, std::vector<uint8_t> headerData, std::vector<RomFile>& files, SourcePtr fnt,
+    Header& h, std::vector<uint8_t> headerData, FileTable& files, SourcePtr fnt,
     std::vector<Allocation>& allocations, std::array<std::vector<OverlayEntry>, 2>& tables, bool changed) {
     progress("Preparing DSi files", 0, 0);
-    auto system = [&](const std::string& name) -> RomFile& {
-        auto found = std::find_if(files.begin(), files.end(), [&](const RomFile& file) { return file.name == name; });
-        require(found != files.end(), "Missing DSi file: " + name);
-        return *found;
+    auto system = [&](const std::string& name) -> RomFile {
+        uint32_t found = files.find(name);
+        require(found != UINT32_MAX, "Missing DSi file: " + name);
+        return files.get(found);
     };
     auto patched = [&](const std::string& name) { return package.has(name) || package.has("xdelta/" + name); };
-    auto& arm9File = system("arm9.bin");
+    auto arm9File = system("arm9.bin");
     auto arm9 = arm9File.data;
     uint32_t marker = 0;
     if (arm9->size >= 12) arm9->read(arm9->size - 12, &marker, sizeof(marker));
@@ -234,35 +243,43 @@ static std::shared_ptr<Map> buildCompleteRom(Workspace& work, SourcePtr input, P
     if (!decrypted) encrypt_arm9(code, secure.data());
     arm9 = overwrite(work, arm9, 0, secure.data(), secure.size());
     std::vector<TwlSection> sections;
-    auto add = [&](RomFile& file, SourcePtr data, std::function<void(uint32_t)> place) {
+    auto add = [&](const RomFile& file, SourcePtr data, std::function<void(uint32_t)> place) {
         sections.push_back({file.offset, file.size, data, place, {}});
     };
     add(arm9File, arm9, [&](uint32_t start) { h.arm9_rom_offset = start; });
     std::vector<Allocation> fat(changed ? 0 : allocations.size());
     if (changed) {
         uint32_t count = 0;
-        for (auto& file : files) if (file.id != 0xffff && file.id != UINT32_MAX) count = std::max(count, file.id + 1);
+        for (uint32_t index = 0; index < files.size(); index++) {
+            auto file = files.get(index);
+            if (file.id != 0xffff && file.id != UINT32_MAX) count = std::max(count, file.id + 1);
+        }
         fat.resize(count);
     }
-    std::vector<RomFile*> byId(fat.size(), nullptr);
-    for (auto& file : files) if (file.id != 0xffff && file.id != UINT32_MAX
-        && (!byId[file.id] || file.name.compare(0, 8, "overlay/") == 0)) byId[file.id] = &file;
+    std::vector<uint32_t> byId(fat.size(), UINT32_MAX);
+    for (uint32_t index = 0; index < files.size(); index++) {
+        auto file = files.get(index);
+        if (file.id != 0xffff && file.id != UINT32_MAX
+            && (byId[file.id] == UINT32_MAX || file.name.compare(0, 8, "overlay/") == 0)) byId[file.id] = index;
+    }
     std::vector<bool> written(fat.size());
     auto payload = [&](uint32_t id) {
         if (written[id]) return;
         written[id] = true;
-        auto file = byId[id];
-        SourcePtr data = file ? file->data : std::make_shared<Slice>(input, allocations[id].start, uint32_t(allocations[id].end) - uint32_t(allocations[id].start));
-        uint32_t start = file ? file->offset : uint32_t(allocations[id].start), size = file ? file->size : data->size;
+        bool present = byId[id] != UINT32_MAX;
+        auto file = present ? files.get(byId[id]) : RomFile{};
+        SourcePtr data = present ? file.data : std::make_shared<Slice>(input, allocations[id].start, uint32_t(allocations[id].end) - uint32_t(allocations[id].start));
+        uint32_t start = present ? file.offset : uint32_t(allocations[id].start), size = present ? file.size : data->size;
         sections.push_back({start, size, data, [&, id, data](uint32_t position) { fat[id].start = position; fat[id].end = position + data->size; }, {}});
     };
     auto overlays = [&](unsigned int cpu) {
         std::string name = cpu == 9 ? "overarm9.bin" : "overarm7.bin";
-        auto found = std::find_if(files.begin(), files.end(), [&](const RomFile& file) { return file.name == name; });
-        if (found == files.end()) return;
+        uint32_t found = files.find(name);
+        if (found == UINT32_MAX) return;
+        auto tableFile = files.get(found);
         auto& table = tables[cpu == 9 ? 0 : 1];
         for (auto& entry : table) {
-            auto& file = system(overlayPath(cpu, entry.id));
+            auto file = system(overlayPath(cpu, entry.id));
             uint32_t flags = entry.reserved;
             if ((flags & 0x1000000) || (cpu == 7 && flags)) entry.reserved = (flags & 0xff000000) | (file.data->size & 0xffffff);
             entry.file_id = file.id;
@@ -272,11 +289,11 @@ static std::shared_ptr<Map> buildCompleteRom(Workspace& work, SourcePtr input, P
         data->finish();
         if (cpu == 9) h.arm9_overlay_size = data->size;
         else h.arm7_overlay_size = data->size;
-        add(*found, data, [&, cpu](uint32_t start) { (cpu == 9 ? h.arm9_overlay_offset : h.arm7_overlay_offset) = start; });
+        add(tableFile, data, [&, cpu](uint32_t start) { (cpu == 9 ? h.arm9_overlay_offset : h.arm7_overlay_offset) = start; });
         for (auto& entry : table) payload(entry.file_id);
     };
     overlays(9);
-    auto& arm7 = system("arm7.bin");
+    auto arm7 = system("arm7.bin");
     h.arm7_size = arm7.data->size;
     add(arm7, arm7.data, [&](uint32_t start) { h.arm7_rom_offset = start; });
     overlays(7);
@@ -293,7 +310,7 @@ static std::shared_ptr<Map> buildCompleteRom(Workspace& work, SourcePtr input, P
         output->finish();
         return output;
     };
-    auto& banner = system("banner.bin");
+    auto banner = system("banner.bin");
     auto bytes = bannerBytes(banner.data, patched("banner.bin") ? banner.data->size : uint32_t(h.banner_size));
     h.banner_size = bytes.size();
     auto data = work.map();
@@ -340,7 +357,7 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
     std::sort(sorted.begin(), sorted.end(), [&](uint32_t a, uint32_t b) {
         return allocations[a].start == allocations[b].start ? a < b : allocations[a].start < allocations[b].start;
     });
-    std::vector<RomFile> files;
+    FileTable files(work, input);
     auto add = [&](const std::string& name, uint32_t id, uint32_t offset, uint32_t size) {
         files.push_back({name, id, std::make_shared<Slice>(input, offset, size), id, offset, size});
     };
@@ -356,7 +373,7 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
     if (h.arm7_overlay_size) add("overarm7.bin", 0xffff, h.arm7_overlay_offset, h.arm7_overlay_size);
     bool addedTable = false;
     if (format2) for (const char* table : {"overarm9.bin", "overarm7.bin"}) {
-        bool present = std::any_of(files.begin(), files.end(), [&](const RomFile& file) { return file.name == table; });
+        bool present = files.find(table) != UINT32_MAX;
         if (!present && (package.has(table) || package.has(std::string("xdelta/") + table))) {
             add(table, 0xffff, 0, 0);
             addedTable = true;
@@ -364,11 +381,12 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
     }
     progress("Reading game directory", 0, 0);
     std::vector<NamedDirectory> directories;
-    auto names = enumerateFiles(input, h, format2, format2 ? &directories : nullptr);
+    auto names = enumerateFiles(input, h, work, format2, format2 ? &directories : nullptr);
     std::vector<uint32_t> namedPositions;
-    for (const auto& item : names) {
+    for (uint32_t index = 0; index < names.size(); index++) {
+        auto item = names.get(index);
         namedPositions.push_back(files.size());
-        add(item.name, item.id, item.offset, item.length);
+        add(item.name, item.id, item.offset, item.size);
     }
     std::array<std::vector<uint32_t>, 2> originalOverlays;
     std::vector<SourcePtr> signedOverlays;
@@ -384,7 +402,7 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
             auto& allocation = allocations[item.file_id];
             originalOverlays[cpu == 9 ? 0 : 1].push_back(item.id);
             add(overlayPath(cpu, item.id), item.file_id, allocation.start, uint32_t(allocation.end) - uint32_t(allocation.start));
-            if (cpu == 9 && (uint32_t(item.reserved) & 0x2000000)) signedOverlays.push_back(files.back().data);
+            if (cpu == 9 && (uint32_t(item.reserved) & 0x2000000)) signedOverlays.push_back(files.get(files.size() - 1).data);
         }
     }
     std::unique_ptr<CompleteTwl> twl;
@@ -393,19 +411,25 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
         files.push_back({"arm9i.bin", 0xffff, twl->program(2), 0xffff, h.dsi9_rom_offset, h.dsi9_size});
         files.push_back({"arm7i.bin", 0xffff, twl->program(3), 0xffff, h.dsi7_rom_offset, h.dsi7_size});
     }
-    std::set<std::string> unique;
-    for (const auto& file : files) patchRequire(unique.insert(normalize(file.name)).second, "Duplicate ROM path: " + file.name);
+    {
+        std::vector<uint32_t> paths(files.size());
+        for (uint32_t index = 0; index < paths.size(); index++) paths[index] = index;
+        std::sort(paths.begin(), paths.end(), [&](uint32_t a, uint32_t b) { return normalize(files.name(a)) < normalize(files.name(b)); });
+        for (uint32_t index = 1; index < paths.size(); index++)
+            patchRequire(normalize(files.name(paths[index - 1])) != normalize(files.name(paths[index])), "Duplicate ROM path: " + files.name(paths[index]));
+    }
+    auto contains = [&](const std::string& name) { return files.find(name) != UINT32_MAX; };
     std::vector<std::pair<std::string, std::string>> additions;
     if (format2) {
         for (const auto& folder : directories) {
             std::set<std::string> children;
-            for (auto file : folder.files) patchRequire(children.insert(normalize(decodeName(names[file].rawName))).second, "Duplicate FNT path");
+            for (auto file : folder.files) patchRequire(children.insert(normalize(decodeName(names.get(file).rawName))).second, "Duplicate FNT path");
             for (auto child : folder.children) patchRequire(children.insert(normalize(directories[child].name)).second, "Duplicate FNT path");
         }
         for (const auto& item : package.entries) {
             bool delta = item.first.compare(0, 7, "xdelta/") == 0;
             std::string target = delta ? item.first.substr(7) : item.first;
-            if ((target.compare(0, 5, "data/") != 0 && target.compare(0, 8, "overlay/") != 0) || unique.count(target)) continue;
+            if ((target.compare(0, 5, "data/") != 0 && target.compare(0, 8, "overlay/") != 0) || contains(target)) continue;
             if (!delta && package.has("xdelta/" + target)) continue;
             additions.push_back({delta ? item.second.name.substr(7) : item.second.name, target});
         }
@@ -415,24 +439,26 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
     uint32_t completed = 0;
     uint32_t fileCount = files.size() + additions.size();
     bool identical = !addedTable && additions.empty();
-    for (auto& file : files) {
+    for (uint32_t index = 0; index < files.size(); index++) {
+        auto file = files.get(index);
         progress("Preparing game files", completed, fileCount, false, file.name.c_str());
         auto original = file.data;
         file.data = package.replace(file.name, original);
         if (!file.data) return nullptr;
+        files.setData(index, file.data);
         if (twl && identical && file.data != original && (!equalSources(file.data, original)
             || ((file.name == "arm9i.bin" || file.name == "arm7i.bin") && !file.data->size))) identical = false;
         progress("Preparing game files", ++completed, fileCount, false, file.name.c_str());
     }
     auto system = [&](const std::string& name) -> SourcePtr {
-        auto found = std::find_if(files.begin(), files.end(), [&](const RomFile& item) { return item.name == name; });
-        require(found != files.end(), "Missing system file: " + name);
-        return found->data;
+        uint32_t found = files.find(name);
+        require(found != UINT32_MAX, "Missing system file: " + name);
+        return files.get(found).data;
     };
     std::array<std::vector<OverlayEntry>, 2> overlayTables;
     if (format2) for (unsigned int cpu : {9u, 7u}) {
         std::string name = cpu == 9 ? "overarm9.bin" : "overarm7.bin";
-        if (unique.count(name)) overlayTables[cpu == 9 ? 0 : 1] = readOverlays(system(name));
+        if (contains(name)) overlayTables[cpu == 9 ? 0 : 1] = readOverlays(system(name));
     }
     std::vector<std::pair<std::pair<unsigned int, uint32_t>, uint32_t>> newOverlayFiles;
     for (const auto& addition : additions) {
@@ -453,7 +479,7 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
             cpu = arm7 ? 7 : 9;
             patchRequire(syntax && overlayPath(cpu, overlayId) == path, "Invalid overlay path: " + addition.first);
             std::string tableName = cpu == 9 ? "overarm9.bin" : "overarm7.bin";
-            patchRequire(unique.count(tableName), "New overlay requires " + tableName + ": " + addition.first);
+            patchRequire(contains(tableName), "New overlay requires " + tableName + ": " + addition.first);
             auto& table = overlayTables[cpu == 9 ? 0 : 1];
             patchRequire(std::any_of(table.begin(), table.end(), [&](OverlayEntry& item) { return item.id == overlayId; }),
                 "New overlay is missing its table entry: " + addition.first);
@@ -463,8 +489,7 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
         if (!data) return nullptr;
         if (overlay) newOverlayFiles.push_back({{cpu == 9 ? 0u : 1u, overlayId}, files.size()});
         else namedPositions.push_back(files.size());
-        files.push_back({overlay ? overlayPath(cpu, overlayId) : names[file].name, UINT32_MAX, data, UINT32_MAX});
-        unique.insert(normalize(files.back().name));
+        files.push_back({overlay ? overlayPath(cpu, overlayId) : names.name(file), UINT32_MAX, data, UINT32_MAX});
         progress("Preparing game files", ++completed, fileCount, false, addition.first.c_str());
     }
     if (format2) for (unsigned int cpu : {9u, 7u}) {
@@ -472,7 +497,7 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
         std::set<uint32_t> ids;
         for (auto& item : overlayTables[index]) {
             patchRequire(ids.insert(item.id).second, "Duplicate overlay ID: " + std::to_string(uint32_t(item.id)));
-            patchRequire(unique.count(overlayPath(cpu, item.id)), "Overlay table entry has no payload: " + overlayPath(cpu, item.id));
+            patchRequire(contains(overlayPath(cpu, item.id)), "Overlay table entry has no payload: " + overlayPath(cpu, item.id));
         }
         for (auto id : originalOverlays[index]) patchRequire(ids.count(id), "Removing overlays is unsupported");
     }
@@ -492,10 +517,10 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
         Header& replacement = *replacementStorage;
         replacement.fnt_offset = input->size;
         replacement.fnt_size = fnt->size;
-        auto newNames = enumerateFiles(combined, replacement, format2);
+        auto newNames = enumerateFiles(combined, replacement, work, format2);
         std::vector<uint32_t> before, after;
-        for (const auto& item : names) before.push_back(item.id);
-        for (const auto& item : newNames) after.push_back(item.id);
+        for (uint32_t index = 0; index < names.size(); index++) before.push_back(names.get(index).id);
+        for (uint32_t index = 0; index < newNames.size(); index++) after.push_back(newNames.get(index).id);
         std::sort(before.begin(), before.end());
         std::sort(after.begin(), after.end());
         patchRequire(before == after, "Replacement FNT must preserve existing file IDs");
@@ -512,7 +537,6 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
         for (uint32_t index = 0; index < sorted.size(); index++) sorted[index] = index;
     }
     names.clear();
-    names.shrink_to_fit();
     directories.clear();
     directories.shrink_to_fit();
     if (package.has("header.bin") || package.has("xdelta/header.bin")) {
@@ -554,8 +578,11 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
     progress("Arranging game files", 0, input->size, true);
     output->copy(input, 0, headerSize);
     std::vector<Allocation> placements(changed ? layout.size() : allocations.size());
-    std::vector<RomFile*> byId(placements.size(), nullptr);
-    for (auto& file : files) if (file.id != 0xffff && (!byId[file.id] || (changed && file.name.compare(0, 8, "overlay/") == 0))) byId[file.id] = &file;
+    std::vector<uint32_t> byId(placements.size(), UINT32_MAX);
+    for (uint32_t index = 0; index < files.size(); index++) {
+        auto file = files.get(index);
+        if (file.id != 0xffff && (byId[file.id] == UINT32_MAX || (changed && file.name.compare(0, 8, "overlay/") == 0))) byId[file.id] = index;
+    }
     std::vector<bool> written(placements.size(), false);
     std::memset(placements.data(), 0, placements.size() * sizeof(Allocation));
     auto pad = [&]() { output->append(Kind::Fill, 255, (512 - output->size % 512) % 512); };
@@ -563,7 +590,7 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
         if (changed && id != 0xffff) {
             if (written[id]) return;
             written[id] = true;
-            data = byId[id]->data;
+            data = files.get(byId[id]).data;
         }
         progress("Arranging game files", 0, data->size, true);
         uint32_t start = output->size;
@@ -575,32 +602,33 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
     std::set<uint32_t> overlayIds;
     auto overlays = [&](unsigned int cpu) {
         std::string name = cpu == 9 ? "overarm9.bin" : "overarm7.bin";
-        if (!unique.count(name)) return;
+        if (!contains(name)) return;
         auto data = system(name);
         auto table = format2 ? std::move(overlayTables[cpu == 9 ? 0 : 1]) : readOverlays(data);
         std::string prefix = cpu == 9 ? "overlay/overlay_" : "overlay/overlay7_";
-        std::vector<RomFile*> payloads;
-        for (auto& file : files) if (file.name.compare(0, prefix.size(), prefix) == 0) payloads.push_back(&file);
-        std::stable_sort(payloads.begin(), payloads.end(), [](const RomFile* a, const RomFile* b) { return a->original < b->original; });
+        std::vector<uint32_t> payloads;
+        for (uint32_t index = 0; index < files.size(); index++) if (files.name(index).compare(0, prefix.size(), prefix) == 0) payloads.push_back(index);
+        std::stable_sort(payloads.begin(), payloads.end(), [&](uint32_t a, uint32_t b) { return files.get(a).original < files.get(b).original; });
         require(payloads.size() == table.size(), "Overlay table does not match its payloads");
         std::map<uint32_t, OverlayEntry*> entries;
         for (auto& item : table) entries.emplace(format2 ? uint32_t(item.id) : uint32_t(item.file_id), &item);
-        for (const auto* file : payloads) {
+        for (auto index : payloads) {
+            auto file = files.get(index);
             auto found = entries.end();
             if (format2) {
-                found = std::find_if(entries.begin(), entries.end(), [&](auto& entry) { return overlayPath(cpu, entry.first) == file->name; });
-            } else found = entries.find(file->original);
+                found = std::find_if(entries.begin(), entries.end(), [&](auto& entry) { return overlayPath(cpu, entry.first) == file.name; });
+            } else found = entries.find(file.original);
             require(found != entries.end(), "Replacement overlay table is missing a file ID");
             auto item = found->second;
-            uint32_t size = changed ? byId[file->id]->data->size : file->data->size;
+            uint32_t size = changed ? files.get(byId[file.id]).data->size : file.data->size;
             uint32_t flags = item->reserved;
             if (((flags >> 24) & 1) || (cpu == 7 && flags > 0)) item->reserved = (flags & 0xff000000) | (size & 0xffffff);
-            if (format2) item->file_id = file->id;
-            else if (changed) for (auto& matching : table) if (matching.file_id == file->original) {
+            if (format2) item->file_id = file.id;
+            else if (changed) for (auto& matching : table) if (matching.file_id == file.original) {
                 uint32_t flags = matching.reserved;
                 if (((flags >> 24) & 1) || (cpu == 7 && flags > 0)) matching.reserved = (flags & 0xff000000) | (size & 0xffffff);
             }
-            overlayIds.insert(file->id);
+            overlayIds.insert(file.id);
         }
         if (changed && !format2) for (auto& item : table) {
             require(item.file_id < oldIds.size(), "Overlay file ID outside FAT");
@@ -610,7 +638,10 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
         else { h.arm7_overlay_offset = output->size; h.arm7_overlay_size = table.size() * sizeof(OverlayEntry); }
         output->literal(table.data(), table.size() * sizeof(OverlayEntry));
         pad();
-        for (const auto* file : payloads) write(file->data, file->id, true);
+        for (auto index : payloads) {
+            auto file = files.get(index);
+            write(file.data, file.id, true);
+        }
     };
     SourcePtr arm9 = system("arm9.bin");
     if (package.has("arm9.bin") || package.has("xdelta/arm9.bin")) {
@@ -618,7 +649,7 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
         if (arm9->size >= 12) arm9->read(arm9->size - 12, &marker, sizeof(marker));
         nitrocode = marker == 0xdec00621;
     }
-    if (work.dsOnly && h.unitcode == 2 && unique.count("overarm9.bin")) {
+    if (work.dsOnly && h.unitcode == 2 && contains("overarm9.bin")) {
         auto table = format2 ? overlayTables[0] : readOverlays(system("overarm9.bin"));
         std::vector<SourcePtr> current;
         for (auto& entry : table) if (uint32_t(entry.reserved) & 0x2000000)
@@ -667,7 +698,7 @@ static std::shared_ptr<Map> buildRomInput(Workspace& work, SourcePtr input, Pack
         uint32_t id = sorted[index];
         if (overlayIds.count(id)) continue;
         auto named = byId[id];
-        if (named) write(named->data, id, index + 1 < sorted.size());
+        if (named != UINT32_MAX) write(files.get(named).data, id, index + 1 < sorted.size());
         else if (allocations[id].end > allocations[id].start) {
             write(std::make_shared<Slice>(input, allocations[id].start, uint32_t(allocations[id].end) - uint32_t(allocations[id].start)), id, index + 1 < sorted.size());
         }
