@@ -467,11 +467,7 @@ void removeTree(const std::string& path) {
     }
     require(closedir(directory) == 0, "Cannot close directory " + path);
     logPreparation("DIRECTORY remove begin " + path);
-#ifdef ARM9
-    require(unlink(path.c_str()) == 0, "Cannot remove directory " + path);
-#else
     require(rmdir(path.c_str()) == 0, "Cannot remove directory " + path);
-#endif
     logPreparation("DIRECTORY remove done " + path);
 }
 
