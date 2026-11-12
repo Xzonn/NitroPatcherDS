@@ -1,117 +1,90 @@
 # NitroPatcherDS User Guide
 
-NitroPatcherDS applies translation patches and other modifications to NDS game cartridges on a 3DS, 2DS, DSi, DSi XL (LL), or an NDS / NDS Lite with a SuperCard miniSD. Games read data from both the cartridge and the storage card, and save directly to the original cartridge.
+NitroPatcherDS applies patches to Nintendo DS game cartridges on a 3DS, 2DS, DSi, or a DS / DS Lite with a Slot-2 flashcart that supports DS mode. Games read data from both the cartridge and the storage card, and save directly to the original cartridge.
 
 ## Installation
 
 ### 3DS / 2DS
 
-You need a 3DS or 2DS with Luma3DS and FBI installed, and an NDS game cartridge compatible with your patch.
+You need a 3DS or 2DS with Luma3DS and FBI installed.
 
 1. Extract `NitroPatcher3DS.zip` and copy `NitroPatcher3DS.cia` and the `nitro-patcher` folder to the root of your SD card.
-2. Put your patch files in `nitro-patcher/patches/` on the SD card. The empty file named `Place patches here` marks this folder.
+2. Put your patch files in `nitro-patcher/patches/` on the SD card.
 3. Put the SD card back in your console and install `NitroPatcher3DS.cia` using FBI.
-4. Insert your game cartridge and open NitroPatcherDS from the HOME Menu.
+4. Insert your game cartridge and open the app from the HOME Menu.
 
-### DSi / DSi XL (LL)
+### DSi
 
-You need a DSi with Unlaunch installed, and an NDS game cartridge compatible with your patch. See [DSi Guide](https://dsi.cfw.guide/installing-unlaunch.html) for Unlaunch installation instructions.
+You need a DSi with Unlaunch installed.
 
 1. Extract `NitroPatcherDSi.zip` and copy the `nitro-patcher` folder to the root of the console's SD card.
 2. Put your patch files in `nitro-patcher/patches/`.
-3. Put the SD card back in your console, insert the game cartridge, and turn on the console while holding A + B to open Unlaunch's Filemenu.
-4. Select NitroPatcherDS, check that the bottom screen shows `sdmc:/nitro-patcher/app/NitroPatcherDSi.nds`, and press A to launch it.
+3. Put the SD card back in your console.
+4. Insert the game cartridge and turn on the console while holding A + B to open Unlaunch's Filemenu. Select NitroPatcherDS and press A to launch it.
+5. To assign a startup shortcut, open Unlaunch's `OPTIONS`, assign the app to one of the `BUTTON A / B / X / Y` options, then choose `SAVE & EXIT`. Hold that button while turning on the console to open the app.
+6. You can also launch it from TWiLight Menu++.
 
-To assign a startup shortcut, open Unlaunch's `OPTIONS`, assign the app to one of the `BUTTON A / B / X / Y` options, then choose `SAVE & EXIT`. Hold that button while turning on the console to open the app.
+### NDS / NDS Lite
 
-You can also select `nitro-patcher/app/NitroPatcherDSi.nds` in TWiLight Menu++. Set the app to run in DSi mode with RAM disk set to None. If the loader locks hardware access, the app automatically restarts through Unlaunch before showing the cartridge prompt. Keep the app and patches on the console's SD card, with the game cartridge in Slot-1.
+You need a Slot-2 flashcart that supports DS mode. SuperCard flashcarts running SuperFW have been tested and work.
 
-### NDS / NDS Lite (SuperCard miniSD)
+**Note**: Operation on DS / DS Lite is severely limited and is not recommended. Use a DSi, 3DS or 2DS if possible.
 
-You need a DS-mode-compatible SuperCard miniSD running SuperFW, and a console with FlashMe configured to boot Slot-2 in DS mode.
-
-1. Extract `NitroPatcherDS.zip` and copy `BOOT.NDS` and the `nitro-patcher` folder to the root of the SuperCard's storage card. Back up any existing `BOOT.NDS` first.
-2. Put your patches in `nitro-patcher/patches/`.
-3. Leave Slot-1 empty and use FlashMe to start the SuperCard in DS mode. SuperFW loads `BOOT.NDS`.
-4. Select your language on first launch, then insert the matching retail NDS cartridge when the cartridge prompt appears and press A to read it. If no cartridge is found, check that it is inserted and press A again.
-5. Select your patches and press START to prepare and launch the game. Keep both cartridges inserted while playing.
-
-To use alongside TWiLight Menu++, keep its `BOOT.NDS`, rename NitroPatcherDS's `BOOT.NDS` to `NitroPatcherDS.nds`, and launch that file from TWiLight Menu++.
-
-If Slot-1 already contained a cartridge at startup and pressing A does not identify it, remove and reinsert the game cartridge, then press A again.
-
-Patches, settings and cache files are stored under `nitro-patcher` on the SuperCard's storage card. The app's `sd:/` paths refer to this card as well.
-
-### Patch folder
-
-Put patches directly in the `patches` folder. The app only lists patch files at this level.
+1. Extract `NitroPatcherDS.zip` and copy `BOOT.NDS` and the `nitro-patcher` folder to the root of the flashcart's storage card.
+2. Put your patch files in `nitro-patcher/patches/`.
+3. Start the SuperCard in DS mode. With FlashMe installed, you can start it directly from the console menu. You can also use a Slot-1 flashcart that supports booting Slot-2.
+4. Insert the game cartridge into Slot-1. SuperFW automatically loads `BOOT.NDS` and starts the app.
+5. Keep the Slot-2 flashcart inserted while playing.
 
 ## Supported patches
 
 | Extension | Contents                                                |
 | --------- | ------------------------------------------------------- |
 | `.xzp`    | A NitroPatcher patch package                            |
-| `.zip`    | A patch package with the same internal structure as XZP |
 | `.xdelta` | An xdelta/VCDIFF patch made for a complete ROM          |
-
-XZP packages can be used directly without extracting them. ZIP packages must follow the XZP structure. If a download contains a separate `.xdelta` file, extract that file and put it in the patch folder.
 
 Check that your cartridge matches the game region and revision required by the patch.
 
 ### DSi-enhanced games on NDS / DS Lite
 
-NDS and DS Lite can run the DS portion of DSi-enhanced games such as Pokémon Black, White, Black 2 and White 2. When preparing an XZP or ZIP patch, the app displays a DS mode notice and processes the DS files and overlays while preserving cartridge save access. DSi-exclusive games and DSiWare are unsupported.
+DS and DS Lite can run the DS portion of DSi-enhanced games such as Pokémon Black, White, Black 2 and White 2. When preparing an XZP patch, the app displays a notice that the game will run in DS mode.
 
-An NDS cannot read the complete DSi region, so **Skip ROM MD5** is enabled by default for these games. You still need a patch for your cartridge's region and revision. If you disable this option, use a cache prepared with ROM MD5 verification on a 3DS or DSi.
+An NDS cannot read the complete DSi region, so **Skip ROM MD5** is enabled by default for these games. If you disable this option, use a cache prepared with ROM MD5 verification on a 3DS or DSi.
 
-Whole-ROM `.xdelta` patches and XZP or ZIP packages that include whole-ROM preprocessing for these games must be prepared on a 3DS or DSi:
+Whole-ROM `.xdelta` patches and XZP packages that include whole-ROM preprocessing for these games must be prepared on a 3DS or DSi:
 
 1. On the 3DS or DSi, use the same cartridge, select the same patch files in the same order, and complete preparation.
-2. Turn off the console and copy the matching cartridge and patch combination directory under `nitro-patcher/cache/` to the same location on the NDS storage card. To create a verified cache, disable **Skip ROM MD5** on the 3DS or DSi before preparing it.
+2. Turn off the console and copy the matching cartridge and patch combination directory under `nitro-patcher/cache/` to the same location on the Slot-2 flashcart's storage card.
 3. On the NDS, select the same patches in the same order and press START to reuse the cache and launch in DS mode.
-
-Caches prepared locally for the DS portion are stored separately from complete caches. To play in DSi mode on a 3DS or DSi, prepare a complete cache on that console.
 
 ## Selecting patches and starting a game
 
-The first time you open the app, choose an interface language. Move up or down to preview each language, then press A to confirm.
+The app reads the game cartridge automatically at startup. If no cartridge is inserted, it prompts you to insert one and press A. Once it has been read, the top screen shows the game icon and title, and the bottom screen lists your patches.
 
-At the cartridge prompt, insert your game cartridge and press A to read it. Once it has been read, the top screen shows the game icon and title. The bottom screen lists your patches.
+Use Up and Down to move through the list, press A to enable or disable a patch, then press START to launch the game. Press Y on a patch to view its information.
 
-1. Use Up and Down to move through the list. Press A to enable or disable a patch.
-2. Press START to launch the game.
-3. When you use a patch for the first time, the app prepares the required files and then starts the game.
+When you use a patch for the first time, the app prepares the required files. This may take a while, and the game starts automatically when preparation is complete. The app remembers the enabled patches and their order for each game. Later launches reuse the cache and start much faster.
 
-The app remembers the enabled patches and their order for each game, and restores your selection the next time you open it. If neither patches nor cheats are enabled, pressing START launches the original game.
-
-During preparation, the screen shows the current step, progress, elapsed time and estimated time remaining. While processing files, it also shows the current file number and total file count. The remaining time is estimated for the whole preparation process and adjusts to the actual processing speed.
-
-Reopen the app after adding patches. To change cartridges or recover after removing and reinserting a cartridge, press X and select **Read another Game Card**. Follow the insertion prompt and press A. The app restores the saved patch selection for that game.
+To change cartridges, press X to open the menu and select **Read another Game Card**. Insert the cartridge as prompted, then press A.
 
 ### Using multiple patches
 
 Patches are applied in the order you select them. The numbers `[1]`, `[2]` and so on beside their names show this order. To change the order, deselect the patches and select them again in the order you need.
 
-Follow the patch authors' instructions when combining patches. For example, if a modification requires a translated version of the game, select the translation patch first, followed by that modification.
-
-You can combine multiple patches. Each patch uses the preceding result as its input. When ROM MD5 verification is enabled, its MD5 requirement is checked against that result; preprocessing also uses that result. An incompatible order may cause a preparation error. Follow the patch authors' instructions.
+Follow the patch authors' instructions when combining patches. For example, the Japanese-name patch for the fourth-generation Pokémon games requires a Chinese translation as its base, so select the translation patch first, followed by the name patch. An incorrect order may cause a preparation error.
 
 ## Cheats
 
-Put a TWiLight Menu++ compatible `usrcheat.dat` in `nitro-patcher/cheats/` on the storage card.
-
-1. Select your patches, then open X → Cheats. When preparation is required, press A to proceed or B to return.
-2. Press A to open a folder or enable or disable a code, Y to read its description, and SELECT to disable all codes.
-3. Press B to leave a folder. Press B from the main cheat list to save your choices and return to the menu.
+1. Put a TWiLight Menu++ compatible `usrcheat.dat` in `nitro-patcher/cheats/` on the storage card.
+2. Select your patches, then open X → Cheats. The app needs to prepare the patches and calculate a checksum before opening the cheat list.
+3. Press A to open a category or enable or disable a code, Y to read its description, and SELECT to disable all codes.
 4. Return to the patch list and press START to launch.
-
-Choices are saved for each game and patch combination. To play without patches or cheats, choose Start original from the menu.
 
 ## Buttons and touch controls
 
 | Control              | Function                                                                |
 | -------------------- | ----------------------------------------------------------------------- |
-| Up / Down            | Move the selection; scroll descriptions, error details or license texts |
+| Up / Down            | Move the selection                                                      |
 | Left / Right / L / R | Change pages                                                            |
 | A                    | Enable or disable a patch in the patch list; confirm a menu choice      |
 | START                | Launch the game from the patch list                                     |
@@ -119,48 +92,41 @@ Choices are saved for each game and patch combination. To play without patches o
 | Y                    | View information and a description for the highlighted patch            |
 | B                    | Go back when indicated on screen                                        |
 
-You can also tap list items and action labels on the bottom screen. If a patch filename is too long to fit, leave it highlighted to see the full name scroll across the screen.
+### In-game controls
 
-Patch information comes from the package itself. The app indicates when a patch has no metadata or description.
-
-### Returning from a game
-
-During a game launched through NitroPatcherDS with patches or cheats enabled, hold L + R + Down + B for about two seconds to return to NitroPatcherDS. Save your progress in the game first.
-
-On NDS / DS Lite, keep the flashcard inserted. After returning, follow the reinsertion prompt: remove and reinsert the game cartridge, then press A to read it.
-
-On 3DS / DSi, this shortcut is unavailable when starting the original game with neither patches nor cheats enabled. On NDS / DS Lite, it also works for the original game.
+| Control                                    | Function                    |
+| ------------------------------------------ | --------------------------- |
+| Hold L + R + Down + B for about two seconds | Return to NitroPatcherDS     |
+| L + Down + SELECT                          | Open the nds-bootstrap menu |
 
 ## Menu
 
-- **Cheats**: Select codes for the current game and patch combination. See [Cheats](#cheats) for database placement and controls.
-- **Current game AP patches**: Enable or disable nds-bootstrap's built-in anti-piracy patches. Enabled by default and saved per game. Change this setting if the patch author asks you to disable built-in AP fixes.
-- **Skip ROM MD5**: Skip the `md5.txt` match requirement when preparing XZP or ZIP packages. Saved per game and disabled by default, except for DSi-enhanced games on NDS / DS Lite. ZIP and xdelta integrity checks remain active. If whole-ROM preprocessing needs an MD5 to select its delta file, the app still calculates it.
+- **Cheats**: Select codes for the current game and patch combination.
+- **Current game AP patches**: Choose Default, Disabled or Forced. Saved per game. Default automatically matches the game and checksum; Disabled turns off built-in anti-piracy patches; Forced ignores the checksum and uses a patch for that game, selecting the first one if several are available. Some translations, such as Tomodachi Collection, already include anti-piracy fixes and require this setting to be disabled to avoid errors.
+- **Skip ROM MD5**: Skip the `md5.txt` match requirement. Disabled by default, except when reading DSi-enhanced games on NDS / DS Lite. Even with this option enabled, applying an xdelta file may still require reading the entire ROM.
+- **Max files open at once**: Choose Unlimited or 16. Unlimited by default and saved per game. If patch preparation fails to open a file, try setting this to 16. Preparation may take longer.
+- **Synchronous read wait**: On 3DS / DSi, choose Automatic, Enabled or Disabled. Automatic by default and saved per game. Try enabling this if a game displays flickering, corrupted graphics or content from the wrong screen.
 - **Start original**: Launch the current cartridge with patches and cheats disabled.
-- **Read another Game Card**: Return to the cartridge prompt. Remove and reinsert your cartridge, then press A to read it.
+- **Read another Game Card**: Change the current game.
 - **Environment report**: Create a report about the console and SD card to help diagnose problems.
 - **Interface language**: Multiple languages are supported, including Simplified Chinese, Traditional Chinese, Japanese, English and Korean. Press A to save your choice, or B to restore the previous language.
-- **Repair memory card**: Check allocation chains, FAT copies and free-space information across the storage card. If the active FAT passes inspection and repairable differences exist, press A to back up filesystem metadata, synchronize FAT copies and update free-space information. Backups are stored under `nitro-patcher/repair/`; the screen shows the full path. Cross-linked, lost or invalid chains, or uncertainty about the correct FAT copy, require backup and repair on a computer. Keep the power on and leave the storage card inserted while repair writes are in progress.
+- **Repair memory card**: Check allocation chains, FAT copies and free space across the storage card.
 - **About**: View the app version, author and open source projects used. Press A to read the licenses.
 
-## Cache and save data
+## Cache
 
 After preparation, the cache is stored in `nitro-patcher/cache/` on the SD card. It is reused when you use the same cartridge revision and patches with the same contents and order. Changing patch contents or the combination of patches creates a corresponding cache. Cached files can be reused indefinitely.
 
 To free up space, turn off the console and delete `nitro-patcher/cache/`. The app will prepare the files again the next time you launch a patched game. Save data is stored on the cartridge, so deleting the patch cache does not delete your saves.
 
-Your language, patch selections, cheat selections and per-game AP and ROM MD5 settings are stored in `nitro-patcher/config/settings.json`.
-
-For patches containing `md5.txt`, disabling **Skip ROM MD5** causes caches prepared without verification to be rebuilt and checked. DSi-enhanced games on NDS require a complete, verified cache prepared on a 3DS or DSi when this option is disabled.
-
-When an app update changes the preparation rules, an older cache is rebuilt automatically when that patch combination is used. Incomplete caches left by failed or interrupted preparation cannot launch games. Select the patches and start again to retry.
-
 ## Troubleshooting
 
-For an unsupported format version, file name, directory layout or overlay configuration, open the error details and press B to return and change your patch selection. The corresponding controls on the touch screen also work.
-
-If no patches appear, check that the files are directly inside `nitro-patcher/patches/` and have a `.xzp`, `.zip` or `.xdelta` extension. Reopen the app after copying files.
+If no patches appear, check that the files are directly inside `nitro-patcher/patches/` and have a `.xzp` or `.xdelta` extension. Reopen the app after copying files.
 
 If you see a patch mismatch message, press A to view the details, then press B to go back and check your patches, cartridge revision and patch order.
 
-If preparation or launch fails, record the error details. When reporting a problem, include the app version, game title and revision, patch names and order, and `nitro-patcher/logs/prepare.log` from the SD card. You can also generate an environment report from the menu; it is saved to `nitro-patcher/logs/environment.log`.
+If an error occurs after launch, try disabling built-in anti-piracy patches for translations that already include AP fixes. If a game needs an AP patch but automatic matching fails, try Forced.
+
+If patch preparation fails to open a file, set **Max files open at once** to 16 in the menu. For flickering or corrupted graphics on 3DS / DSi, try enabling **Synchronous read wait**.
+
+If preparation or launch fails, take a photo of the error details. When reporting a problem, include the app version, game title and revision, patch names and order, and an archive of the `nitro-patcher` folder from the SD card.
