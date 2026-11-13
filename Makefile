@@ -4,7 +4,15 @@ export DIAGNOSTIC ?= 0
 export LAUNCH_TRACE ?= 0
 export PREPARE_TRACE ?= 0
 export SLOT2 ?= 0
-export NP3D_VERSION := $(shell git describe --always --dirty)
+export NP3D_VERSION := $(shell git rev-parse HEAD | cut -c1-7)
+ifeq ($(GITHUB_REF_TYPE),tag)
+export NP3D_VERSION := $(GITHUB_REF_NAME)
+else ifeq ($(GITHUB_REF_TYPE),)
+NP3D_TAG := $(shell git symbolic-ref -q HEAD >/dev/null || git tag --points-at HEAD | head -n1)
+ifneq ($(NP3D_TAG),)
+export NP3D_VERSION := $(NP3D_TAG)
+endif
+endif
 export NP3D_LIBFAT := $(CURDIR)/vendor/libfat/nds/lib/libfat.a
 
 all: launcher launcher-slot2 forwarder

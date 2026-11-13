@@ -18,7 +18,7 @@ try {
     if ($IsLinux) {
         $containerUser = @("--user", "$(id -u):$(id -g)")
     }
-    docker run --rm @containerUser --mount "type=bind,source=$projectRoot,target=/work" --workdir /work nitropatcher3ds-build:20241104 make verify "DIAGNOSTIC=$([int]$Diagnostic.IsPresent)" "LAUNCH_TRACE=$([int]$LaunchTrace.IsPresent)" "PREPARE_TRACE=$([int]$PreparationTrace.IsPresent)"
+    docker run --rm @containerUser --env GITHUB_REF_TYPE --env GITHUB_REF_NAME --mount "type=bind,source=$projectRoot,target=/work" --workdir /work nitropatcher3ds-build:20241104 make verify "DIAGNOSTIC=$([int]$Diagnostic.IsPresent)" "LAUNCH_TRACE=$([int]$LaunchTrace.IsPresent)" "PREPARE_TRACE=$([int]$PreparationTrace.IsPresent)"
     if ($LASTEXITCODE -ne 0) {
         throw "Build failed with exit code $LASTEXITCODE."
     }
