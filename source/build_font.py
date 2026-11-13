@@ -8,6 +8,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("font")
 parser.add_argument("output")
 parser.add_argument("--japanese-font", required=True)
+parser.add_argument("--traditional-chinese-font", required=True)
 parser.add_argument("--korean-font", required=True)
 args = parser.parse_args()
 
@@ -71,9 +72,11 @@ def save(characters, path):
 
 song = load(args.font)
 japanese = load(args.japanese_font)
+traditional = load(args.traditional_chinese_font)
 korean = load(args.korean_font)
-base = korean | japanese | song
+base = korean | traditional | japanese | song
 directory = os.path.dirname(args.output)
 save(base, args.output)
 save(base | japanese, f"{directory}/japanese12.nftr")
+save(base | traditional, f"{directory}/traditional12.nftr")
 save(base | korean, f"{directory}/korean12.nftr")

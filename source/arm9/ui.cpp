@@ -147,7 +147,8 @@ void useLanguage(int index) {
     static const struct {
         const char* language;
         const char* resource;
-    } fonts[] = {{"ja", "fonts/japanese12.nftr"}, {"ko", "fonts/korean12.nftr"}};
+    } fonts[] = {
+        {"ja", "fonts/japanese12.nftr"}, {"zh-hant", "fonts/traditional12.nftr"}, {"ko", "fonts/korean12.nftr"}};
     const char* path = "fonts/song12.nftr";
     for (const auto& item : fonts)
         if (languageCodes[index] == item.language)
