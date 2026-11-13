@@ -48,6 +48,7 @@ try {
         try {
             [void]$package.CreateEntry("nitro-patcher/")
             [void]$package.CreateEntry("nitro-patcher/cheats/")
+            [void]$package.CreateEntry("nitro-patcher/cheats/Place usrcheat.dat here")
             [void]$package.CreateEntry("nitro-patcher/patches/")
             [void]$package.CreateEntry("nitro-patcher/patches/Place patches here")
             [void]$package.CreateEntry("nitro-patcher/roms/")
