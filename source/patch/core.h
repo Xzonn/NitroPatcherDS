@@ -11,7 +11,7 @@
 namespace np3d {
 
 constexpr uint32_t FormatVersion = 1;
-constexpr uint32_t RulesVersion = 3;
+constexpr uint32_t RulesVersion = 4;
 constexpr uint32_t BufferSize = 65536;
 constexpr const char* DsModeDeltaError =
     "Prepare whole-ROM xdelta patches for DSi-enhanced games on a 3DS or DSi, then copy the prepared cache to the NDS. Use the same Game Card, patches and patch order.";

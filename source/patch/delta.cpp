@@ -97,11 +97,16 @@ static int emit(xd3_stream* stream, const xd3_hinst* instruction, const uint8_t*
     if (instruction->type == XD3_ADD)
         state.literal(stream, data, length);
     else if (instruction->type == XD3_RUN) {
-        state.target->append(Kind::Fill, *data, length);
+        bool materialize = length < 0x4000;
+        if (!materialize)
+            state.target->append(Kind::Fill, *data, length);
         std::memset(state.buffer.data(), *data, std::min(length, state.chunk));
         while (length) {
             uint32_t take = std::min(length, state.chunk);
-            state.record(stream, state.buffer.data(), take);
+            if (materialize)
+                state.literal(stream, state.buffer.data(), take);
+            else
+                state.record(stream, state.buffer.data(), take);
             length -= take;
         }
     } else {
@@ -112,7 +117,9 @@ static int emit(xd3_stream* stream, const xd3_hinst* instruction, const uint8_t*
             require(stream->dec_cpyoff <= input->size && stream->dec_cpylen <= input->size - stream->dec_cpyoff,
                     "VCDIFF source window exceeds source file");
             uint32_t take = std::min<uint32_t>(length, stream->dec_cpylen - address);
-            state.target->copy(input, stream->dec_cpyoff + address, take);
+            bool materialize = take < 0x4000;
+            if (!materialize)
+                state.target->copy(input, stream->dec_cpyoff + address, take);
             length -= take;
             uint32_t offset = stream->dec_cpyoff + address;
             while (take) {
@@ -121,7 +128,10 @@ static int emit(xd3_stream* stream, const xd3_hinst* instruction, const uint8_t*
                     state.read(offset, state.buffer.data(), bytes);
                 else
                     input->read(offset, state.buffer.data(), bytes);
-                state.record(stream, state.buffer.data(), bytes);
+                if (materialize)
+                    state.literal(stream, state.buffer.data(), bytes);
+                else
+                    state.record(stream, state.buffer.data(), bytes);
                 offset += bytes;
                 take -= bytes;
             }
