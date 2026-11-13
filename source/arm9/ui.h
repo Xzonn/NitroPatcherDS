@@ -22,7 +22,7 @@ const std::vector<std::string>& selectedPatches();
 const std::string& selectedRom();
 int apPatchMode();
 bool skipRomMd5Enabled();
-bool limitOpenFilesEnabled();
+int limitOpenFiles();
 int updateDisplayWhileReading();
 const np3d::CheatSelection& selectedCheats();
 void showCheats(np3d::SourcePtr rom, np3d::SourcePtr card);

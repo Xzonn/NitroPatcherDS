@@ -138,6 +138,7 @@ enum class Text {
     ClearCache,
     ClearingCache,
     CacheCleared,
+    Default,
     Count
 };
 extern int LanguageCount;

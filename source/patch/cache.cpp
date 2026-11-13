@@ -196,7 +196,8 @@ std::vector<std::string> listPatches(const std::string& root) {
 }
 
 Prepared prepare(SourcePtr card, const std::string& path, const std::string& root, bool dsOnly, bool skipRomMd5,
-                 PreparationConfirm confirm) {
+                 PreparationConfirm confirm, int openFileLimit) {
+    setMapFileLimit(openFileLimit == 16);
     require(path.compare(0, root.size() + 9, root + "/patches/") == 0 && path.find("/../") == std::string::npos,
             "Place patches in nitro-patcher/patches");
     makeDirectory(root);
@@ -214,6 +215,8 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
     std::unique_ptr<Package> archive;
     if (!isDeltaPatch(path)) {
         archive = std::make_unique<Package>(path);
+        if (openFileLimit < 0 && archive->entries.size() > 512)
+            setMapFileLimit(true);
         if (!archive->metadata.error.empty())
             return {"", nullptr, false, archive->metadata.error, false};
     }
@@ -358,10 +361,11 @@ Prepared prepare(SourcePtr card, const std::string& path, const std::string& roo
 }
 
 Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const std::string& root, bool dsOnly,
-                 bool skipRomMd5, PreparationConfirm confirm) {
+                 bool skipRomMd5, PreparationConfirm confirm, int openFileLimit) {
+    setMapFileLimit(openFileLimit == 16);
     require(!paths.empty(), "No patches selected");
     if (paths.size() == 1)
-        return prepare(card, paths.front(), root, dsOnly, skipRomMd5, confirm);
+        return prepare(card, paths.front(), root, dsOnly, skipRomMd5, confirm, openFileLimit);
     makeDirectory(root + "/cache");
     makeDirectory(root + "/config");
     auto rawHeader = readBytes(card, 0, 512);
@@ -378,6 +382,8 @@ Prepared prepare(SourcePtr card, const std::vector<std::string>& paths, const st
         names += path.substr(path.find_last_of('/') + 1) + "\n";
         if (!isDeltaPatch(path)) {
             Package package(path);
+            if (openFileLimit < 0 && package.entries.size() > 512)
+                setMapFileLimit(true);
             if (!package.metadata.error.empty())
                 return {"", nullptr, false, package.metadata.error, false};
             hasMd5 = hasMd5 || package.has("md5.txt");

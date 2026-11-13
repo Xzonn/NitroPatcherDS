@@ -451,8 +451,9 @@ void render() {
                     ? format(Text::SkipRomMd5,
                              fmt::arg("state", tr(skipRomMd5Enabled() ? Text::Enabled : Text::Disabled)))
                 : MenuCommands[index] == Command::LimitOpenFiles
-                    ? format(Text::LimitOpenFiles,
-                             fmt::arg("limit", limitOpenFilesEnabled() ? "16" : tr(Text::Unlimited)))
+                    ? format(Text::LimitOpenFiles, fmt::arg("limit", limitOpenFiles() < 0 ? tr(Text::Default)
+                                                                     : limitOpenFiles()   ? "16"
+                                                                                          : tr(Text::Unlimited)))
                 : MenuCommands[index] == Command::UpdateDisplayWhileReading
                     ? format(Text::UpdateDisplayWhileReading,
                              fmt::arg("state", tr(updateDisplayWhileReading() < 0 ? Text::Automatic
@@ -685,7 +686,8 @@ void command(Command value, int argument = 0) {
     if (storage::writeBlocked() &&
         (value == Command::Toggle || value == Command::Start || value == Command::Original ||
          value == Command::Report || value == Command::PickLanguage || value == Command::ApPatch ||
-         value == Command::SkipRomMd5 || value == Command::UpdateDisplayWhileReading || value == Command::Cheats)) {
+         value == Command::SkipRomMd5 || value == Command::LimitOpenFiles ||
+         value == Command::UpdateDisplayWhileReading || value == Command::Cheats)) {
         state.fatal = false;
         state.mismatch = false;
         state.detail = tr(Text::StorageIoError);
@@ -763,7 +765,11 @@ void command(Command value, int argument = 0) {
         break;
     case Command::LimitOpenFiles:
         if (state.hasCard) {
-            state.settings.limitOpenFiles[state.gameKey] = !limitOpenFilesEnabled();
+            int limit = limitOpenFiles();
+            if (limit == 0)
+                state.settings.limitOpenFiles.erase(state.gameKey);
+            else
+                state.settings.limitOpenFiles[state.gameKey] = limit < 0 ? 16 : 0;
             save();
         }
         break;
@@ -1128,11 +1134,9 @@ bool skipRomMd5Enabled() {
     auto found = state.settings.skipRomMd5.find(state.gameKey);
     return found == state.settings.skipRomMd5.end() ? state.defaultSkipRomMd5 : found->second;
 }
-bool limitOpenFilesEnabled() {
-    if (!state.hasCard)
-        return false;
+int limitOpenFiles() {
     auto found = state.settings.limitOpenFiles.find(state.gameKey);
-    return found != state.settings.limitOpenFiles.end() && found->second;
+    return found == state.settings.limitOpenFiles.end() ? -1 : found->second;
 }
 int updateDisplayWhileReading() {
     auto found = state.settings.updateDisplayWhileReading.find(state.gameKey);

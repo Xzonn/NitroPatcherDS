@@ -796,5 +796,11 @@
     "key": "cache_cleanup.done",
     "original": "Cache cleared. It will be prepared again the next time you start this game.",
     "translation": "Cache cleared. It will be prepared again the next time you start this game."
+  },
+  {
+    "index": 134,
+    "key": "common.default",
+    "original": "Default",
+    "translation": "Default"
   }
 ]

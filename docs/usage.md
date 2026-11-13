@@ -108,7 +108,7 @@ Follow the patch authors' instructions when combining patches. For example, the 
 - **Cheats**: Select codes for the current game and patch combination.
 - **Current game AP patches**: Choose Default, Disabled or Forced. Saved per game. Default automatically matches the game and checksum; Disabled turns off built-in anti-piracy patches; Forced ignores the checksum and uses a patch for that game, selecting the first one if several are available. Some translations, such as Tomodachi Collection, already include anti-piracy fixes and require this setting to be disabled to avoid errors.
 - **Skip ROM MD5**: Skip the `md5.txt` match requirement. Disabled by default, except when reading DSi-enhanced games on NDS / DS Lite. Even with this option enabled, applying an xdelta file may still require reading the entire ROM.
-- **Max files open at once**: Choose Unlimited or 16. Unlimited by default and saved per game. If patch preparation fails to open a file, try setting this to 16. Preparation may take longer.
+- **Max files open at once**: Choose Default, 16 or Unlimited. Saved per game. Default uses 16 when any selected patch package contains more than 512 files, and Unlimited otherwise.
 - **Synchronous read wait**: On 3DS / DSi, choose Automatic, Enabled or Disabled. Automatic by default and saved per game. Try enabling this if a game displays flickering, corrupted graphics or content from the wrong screen.
 - **Start original**: Launch the current cartridge with patches and cheats disabled.
 - **Read another Game Card**: Change the current game.

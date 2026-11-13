@@ -283,7 +283,7 @@ int main(int argc, char** argv) {
             auto paths = action == ui::Action::Original ? std::vector<std::string>() : ui::selectedPatches();
             bool dsOnly = romPath.empty() && !isDSiMode() && gameHeader->unitCode == 2;
             bool skipRomMd5 = ui::skipRomMd5Enabled();
-            np3d::setMapFileLimit(ui::limitOpenFilesEnabled());
+            np3d::setMapFileLimit(ui::limitOpenFiles() == 16);
             if (dsOnly &&
                 std::any_of(paths.begin(), paths.end(),
                             [](const std::string& path) { return !np3d::isDeltaPatch(path); }) &&
@@ -328,7 +328,8 @@ int main(int argc, char** argv) {
                     payload->sync();
                 } else
                     prepared = np3d::prepare(card, paths, "sd:/nitro-patcher", dsOnly, skipRomMd5,
-                                             action == ui::Action::Cheats ? confirmCheatPreparation : nullptr);
+                                             action == ui::Action::Cheats ? confirmCheatPreparation : nullptr,
+                                             ui::limitOpenFiles());
                 if (prepared.cancelled) {
                     np3d::setProgressHandler(nullptr);
                     np3d::finishPreparationLog(false, "Preparation cancelled");

@@ -669,7 +669,7 @@
     "index": 112,
     "key": "common.unlimited",
     "original": "Unlimited",
-    "translation": "不限"
+    "translation": "无限制"
   },
   {
     "index": 113,
@@ -796,5 +796,11 @@
     "key": "cache_cleanup.done",
     "original": "Cache cleared. It will be prepared again the next time you start this game.",
     "translation": "缓存已清理，下次启动将重新准备。"
+  },
+  {
+    "index": 134,
+    "key": "common.default",
+    "original": "Default",
+    "translation": "默认"
   }
 ]

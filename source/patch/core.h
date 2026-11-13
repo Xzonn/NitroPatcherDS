@@ -157,9 +157,9 @@ struct Prepared {
 };
 using PreparationConfirm = bool (*)();
 Prepared prepare(SourcePtr card, const std::string& patch, const std::string& root, bool dsOnly = false,
-                 bool skipRomMd5 = false, PreparationConfirm confirm = nullptr);
+                 bool skipRomMd5 = false, PreparationConfirm confirm = nullptr, int openFileLimit = -1);
 Prepared prepare(SourcePtr card, const std::vector<std::string>& patches, const std::string& root, bool dsOnly = false,
-                 bool skipRomMd5 = false, PreparationConfirm confirm = nullptr);
+                 bool skipRomMd5 = false, PreparationConfirm confirm = nullptr, int openFileLimit = -1);
 void clearGameCache(const std::string& root, const std::string& cardKey);
 std::vector<std::string> listPatches(const std::string& root);
 

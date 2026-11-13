@@ -20,7 +20,7 @@ struct Settings {
     std::map<std::string, std::vector<std::string>> games;
     std::map<std::string, int> apPatch;
     std::map<std::string, bool> skipRomMd5;
-    std::map<std::string, bool> limitOpenFiles;
+    std::map<std::string, int> limitOpenFiles;
     std::map<std::string, bool> updateDisplayWhileReading;
     std::map<std::string, CheatSelection> cheats;
 };
