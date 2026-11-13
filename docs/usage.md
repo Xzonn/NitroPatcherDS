@@ -47,7 +47,7 @@ You need a Slot-2 flashcart that supports DS mode. SuperCard flashcarts running 
 | `.xzp`    | A NitroPatcher patch package                   |
 | `.xdelta` | An xdelta/VCDIFF patch made for a complete ROM |
 
-Check that your cartridge matches the game region and revision required by the patch.
+Check that your cartridge matches the game region and revision required by the patch. You can create your own `.xzp` patches on this site: <https://xzonn.top/NitroPatcher/>.
 
 ### DSi-enhanced games on NDS / DS Lite
 

@@ -13,6 +13,7 @@ NitroPatcherDS 可以在 3DS／2DS、DSi，以及支持在 NDS 模式下使用 S
 
 - 所有 Xzonn 之前发布的 NDS 游戏用的都是 xzp 补丁，基本都可以直接使用。汇总链接：<https://pan.baidu.com/s/1maqi_aZXmVj8RbfJv1LbNA?pwd=ntpc>
 - 对于其他汉化组汉化的游戏，此处整理了部分热门游戏的汉化补丁。汇总链接：<https://pan.baidu.com/s/1u4vZy4GsA1fh69vKD7hJvw?pwd=ntpc>
+- 你也可以在网页工具上自行制作 xzp 补丁：<https://xzonn.top/NitroPatcher/>
 
 **注意**：部分补丁未经完整测试；对于以上补丁如有问题，请及时反馈。
 
@@ -57,7 +58,7 @@ NitroPatcherDS 可以在 3DS／2DS、DSi，以及支持在 NDS 模式下使用 S
 | `.xzp`    | NitroPatcher 格式的补丁包                   |
 | `.xdelta` | 针对整份 ROM 制作的 xdelta／VCDIFF 差分补丁 |
 
-选择补丁前，请确认补丁要求的游戏地区和版本与卡带一致。
+选择补丁前，请确认补丁要求的游戏地区和版本与卡带一致。你也可以在这个网站上制作你自己的 `.xzp` 补丁：<https://xzonn.top/NitroPatcher/>
 
 ### DS／DS Lite 上的 DSi 增强游戏
 
