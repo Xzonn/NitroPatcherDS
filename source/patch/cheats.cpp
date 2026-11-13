@@ -27,17 +27,21 @@ CheatStatus Cheats::load(const std::string& database, SourcePtr rom, SourcePtr c
     identity = cheatIdentity(rom);
     auto original = cheatIdentity(card);
     patched = !(identity == original);
-    if (!exists(database)) return CheatStatus::MissingDatabase;
+    if (!exists(database))
+        return CheatStatus::MissingDatabase;
     Disk input(database);
     long offset;
     size_t length;
     if (!data->list.searchCheatData(input.handle, identity.gameCode, identity.crc32, offset, length)) {
-        if (identity == original) return CheatStatus::NotFound;
+        if (identity == original)
+            return CheatStatus::NotFound;
         identity = original;
         patched = false;
-        if (!data->list.searchCheatData(input.handle, identity.gameCode, identity.crc32, offset, length)) return CheatStatus::NotFound;
+        if (!data->list.searchCheatData(input.handle, identity.gameCode, identity.crc32, offset, length))
+            return CheatStatus::NotFound;
     }
-    patchRequire(data->list.parseInternal(input.handle, identity.gameCode, identity.crc32), "Cannot read the game's cheat list");
+    patchRequire(data->list.parseInternal(input.handle, identity.gameCode, identity.crc32),
+                 "Cannot read the game's cheat list");
     int parent = -1;
     const auto& items = data->list.items();
     for (size_t index = 0; index < items.size(); index++) {
@@ -64,7 +68,9 @@ void Cheats::select(size_t index, bool enabled) { data->list.setSelected(index, 
 
 std::vector<size_t> Cheats::children(int folder) const {
     std::vector<size_t> result;
-    for (size_t index = 0; index < data->parents.size(); index++) if (data->parents[index] == folder) result.push_back(index);
+    for (size_t index = 0; index < data->parents.size(); index++)
+        if (data->parents[index] == folder)
+            result.push_back(index);
     return result;
 }
 
@@ -81,12 +87,16 @@ std::string Cheats::key(size_t index) const {
 }
 
 bool Cheats::restore(const CheatSelection& selection) {
-    for (size_t index = 0; index < data->parents.size(); index++) data->list.setSelected(index, false);
-    if (selection.enabled.empty()) return true;
-    if (!(selection.identity == identity)) return false;
+    for (size_t index = 0; index < data->parents.size(); index++)
+        data->list.setSelected(index, false);
+    if (selection.enabled.empty())
+        return true;
+    if (!(selection.identity == identity))
+        return false;
     size_t found = 0;
     for (size_t index = 0; index < data->parents.size(); index++) {
-        if (folder(index)) continue;
+        if (folder(index))
+            continue;
         std::string identifier = key(index);
         if (std::find(selection.enabled.begin(), selection.enabled.end(), identifier) != selection.enabled.end()) {
             data->list.setSelected(index, true);
@@ -94,7 +104,8 @@ bool Cheats::restore(const CheatSelection& selection) {
         }
     }
     if (found != selection.enabled.size()) {
-        for (size_t index = 0; index < data->parents.size(); index++) data->list.setSelected(index, false);
+        for (size_t index = 0; index < data->parents.size(); index++)
+            data->list.setSelected(index, false);
         return false;
     }
     return true;
@@ -103,13 +114,17 @@ bool Cheats::restore(const CheatSelection& selection) {
 CheatSelection Cheats::selection() const {
     CheatSelection result;
     result.identity = identity;
-    for (size_t index = 0; index < data->parents.size(); index++) if (selected(index)) result.enabled.push_back(key(index));
+    for (size_t index = 0; index < data->parents.size(); index++)
+        if (selected(index))
+            result.enabled.push_back(key(index));
     return result;
 }
 
 uint32_t Cheats::byteSize() const {
     uint32_t bytes = 0;
-    for (const auto& entry : data->list.items()) if (entry._flags & cCheatDatItem::ESelected) bytes += entry._cheat.size() * 4;
+    for (const auto& entry : data->list.items())
+        if (entry._flags & cCheatDatItem::ESelected)
+            bytes += entry._cheat.size() * 4;
     return bytes ? bytes + 4 : 0;
 }
 
@@ -121,17 +136,22 @@ void Cheats::write(const std::string& path) {
     output.sync();
 }
 
-CheatStatus writeCheats(const std::string& root, SourcePtr rom, SourcePtr card, const CheatSelection& selection, uint32_t limit) {
+CheatStatus writeCheats(const std::string& root, SourcePtr rom, SourcePtr card, const CheatSelection& selection,
+                        uint32_t limit) {
     std::string directory = root + "/runtime/bootstrap", path = directory + "/cheatData.bin";
     if (selection.enabled.empty()) {
-        if (exists(path)) require(unlink(path.c_str()) == 0, "Cannot clear previous cheat codes");
+        if (exists(path))
+            require(unlink(path.c_str()) == 0, "Cannot clear previous cheat codes");
         return CheatStatus::Ready;
     }
     Cheats cheats;
     CheatStatus status = cheats.load(root + "/cheats/usrcheat.dat", rom, card);
-    if (status != CheatStatus::Ready) return status;
-    if (!cheats.restore(selection)) return CheatStatus::SelectionChanged;
-    if (cheats.byteSize() > limit) return CheatStatus::TooLarge;
+    if (status != CheatStatus::Ready)
+        return status;
+    if (!cheats.restore(selection))
+        return CheatStatus::SelectionChanged;
+    if (cheats.byteSize() > limit)
+        return CheatStatus::TooLarge;
     makeDirectory(root + "/runtime");
     makeDirectory(directory);
     cheats.write(path);

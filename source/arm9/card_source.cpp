@@ -26,16 +26,23 @@ struct GameCard final : np3d::Source {
         if (id & 0x80000000) {
             for (uint32_t offset = 0; offset < 0x1000; offset += 512) {
                 cardParamCommand(CARD_CMD_HEADER_READ, offset, control | CARD_BLK_SIZE(1),
-                    reinterpret_cast<uint32_t*>(prefix + offset), 512 / sizeof(uint32_t));
+                                 reinterpret_cast<uint32_t*>(prefix + offset), 512 / sizeof(uint32_t));
             }
         } else {
-            cardParamCommand(CARD_CMD_HEADER_READ, 0, control | CARD_BLK_SIZE(4),
-                reinterpret_cast<uint32_t*>(prefix), 0x1000 / sizeof(uint32_t));
+            cardParamCommand(CARD_CMD_HEADER_READ, 0, control | CARD_BLK_SIZE(4), reinterpret_cast<uint32_t*>(prefix),
+                             0x1000 / sizeof(uint32_t));
         }
         progress("Initializing Game Card", 0, 0);
-        if (cardInit(&header, &id) != 0) {error="Cannot initialize Game Card for patch preparation";return;}
-        if (chipId) *chipId = id;
-        if (header.deviceSize > 13) {error="Game Card exceeds supported ROM size";return;}
+        if (cardInit(&header, &id) != 0) {
+            error = "Cannot initialize Game Card for patch preparation";
+            return;
+        }
+        if (chipId)
+            *chipId = id;
+        if (header.deviceSize > 13) {
+            error = "Game Card exceeds supported ROM size";
+            return;
+        }
         size = 0x20000u << header.deviceSize;
         progress("Reading secure area", 0, 0x4000, true);
         cardRead(0x4000, reinterpret_cast<uint32_t*>(prefix + 0x4000), 0x4000);
@@ -45,9 +52,11 @@ struct GameCard final : np3d::Source {
         std::memcpy(&code, header.gameCode, sizeof(code));
         encrypt_arm9(code, secure.data());
         if (swiCRC16(0xffff, secure.data(), secure.size()) != header.secureCRC16) {
-            error="Game Card secure area checksum mismatch";return;
+            error = "Game Card secure area checksum mismatch";
+            return;
         }
-        if (!isDSiMode()) cardRead(0x8000,identity,sizeof(identity));
+        if (!isDSiMode())
+            cardRead(0x8000, identity, sizeof(identity));
     }
 
     void read(uint32_t offset, void* output, uint32_t length) override {
@@ -66,7 +75,7 @@ struct GameCard final : np3d::Source {
             uint32_t take = std::min(length, 4096 - offset % 4096);
             auto& header = *reinterpret_cast<sNDSHeaderExt*>(headerData);
             require(header.unitCode == 0 || base <= header.romSize || isDSiMode(),
-                "Reading DSi cartridge regions requires DSi mode");
+                    "Reading DSi cartridge regions requires DSi mode");
             uint32_t source = base;
             uint32_t twlStart = uint32_t(header.twl_rom_region_start) * 0x80000u;
             if (header.unitCode != 0 && twlStart != 0 && base >= twlStart && base - twlStart < 0x3000) {
@@ -92,11 +101,11 @@ struct GameCard final : np3d::Source {
 
 np3d::SourcePtr openGameCard(uint32_t* chipId, std::string& error) {
     error.clear();
-    auto card=std::make_shared<GameCard>(chipId,error);
-    return error.empty()?card:nullptr;
+    auto card = std::make_shared<GameCard>(chipId, error);
+    return error.empty() ? card : nullptr;
 }
 bool gameCardMatches(np3d::SourcePtr card) {
     alignas(4) uint32_t current[128];
-    cardRead(0x8000,current,sizeof(current));
-    return std::memcmp(std::static_pointer_cast<GameCard>(card)->identity,current,sizeof(current))==0;
+    cardRead(0x8000, current, sizeof(current));
+    return std::memcmp(std::static_pointer_cast<GameCard>(card)->identity, current, sizeof(current)) == 0;
 }

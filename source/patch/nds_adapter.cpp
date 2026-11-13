@@ -19,8 +19,9 @@ void ndsRequire(bool condition, const char* message) { np3d::patchRequire(condit
 void ndsDirectoryCheck(const char* prefix, unsigned int id) {
     NP3D_PREPARE_LOG("NDS directory id=" + std::to_string(id) + " path=" + prefix);
     np3d::patchRequire(id >= 0xf000 && id <= 0xffff && directories.insert(id).second,
-        "Invalid NDS directory tree or cycle");
-    np3d::patchRequire(std::count(prefix, prefix + std::strlen(prefix), '/') <= 257, "NDS directory nesting exceeds limit");
+                       "Invalid NDS directory tree or cycle");
+    np3d::patchRequire(std::count(prefix, prefix + std::strlen(prefix), '/') <= 257,
+                       "NDS directory nesting exceeds limit");
 }
 
 namespace np3d {
@@ -39,7 +40,8 @@ static uint32_t currentDirectory;
 static uint32_t romSize;
 
 static void directory(const char* prefix, unsigned int id, unsigned int count, bool entering) {
-    if (!entering) return;
+    if (!entering)
+        return;
     uint32_t parent = id == 0xf000 ? UINT32_MAX : directoryIndices.at(count & 0xfff);
     patchRequire(id == 0xf000 || parent != UINT32_MAX, "Missing FNT parent directory");
     std::string path(prefix), raw;
@@ -48,10 +50,12 @@ static void directory(const char* prefix, unsigned int id, unsigned int count, b
         raw = path.substr(path.find_last_of('/') + 1);
     }
     std::string name = parent == UINT32_MAX ? "data" : decodeName(raw);
-    patchRequire(name.find_first_of("/\\") == std::string::npos && name != "." && name != "..", "Invalid FNT path component");
+    patchRequire(name.find_first_of("/\\") == std::string::npos && name != "." && name != "..",
+                 "Invalid FNT path component");
     uint32_t index = tree->size();
     tree->push_back({name, raw, parent, {}, {}});
-    if (parent != UINT32_MAX) (*tree)[parent].children.push_back(index);
+    if (parent != UINT32_MAX)
+        (*tree)[parent].children.push_back(index);
     directoryIndices[id & 0xfff] = index;
     currentDirectory = index;
 }
@@ -66,7 +70,8 @@ static void visit(const char* prefix, const char* name, unsigned int id, unsigne
     uint32_t parent = tree ? currentDirectory : 0;
     if (tree) {
         auto decoded = decodeName(name);
-        patchRequire(decoded.find_first_of("/\\") == std::string::npos && decoded != "." && decoded != "..", "Invalid FNT path component");
+        patchRequire(decoded.find_first_of("/\\") == std::string::npos && decoded != "." && decoded != "..",
+                     "Invalid FNT path component");
         (*tree)[parent].files.push_back(files->size());
     }
     patchRequire(offset <= romSize && length <= romSize - offset, "NDS file outside ROM: data" + path);
@@ -88,7 +93,10 @@ static ssize_t readCookie(void* opaque, char* output, size_t length) {
 #ifdef ARM9
 static fpos_t seekCookie(void* opaque, fpos_t offset, int origin) {
     auto& cookie = *static_cast<Cookie*>(opaque);
-    int64_t position = (origin == SEEK_CUR ? cookie.position : origin == SEEK_END ? cookie.source->size : 0) + int64_t(offset);
+    int64_t position = (origin == SEEK_CUR   ? cookie.position
+                        : origin == SEEK_END ? cookie.source->size
+                                             : 0) +
+                       int64_t(offset);
     require(position >= 0 && uint64_t(position) <= cookie.source->size, "NDS directory seek outside ROM");
     cookie.position = position;
     return position;
@@ -105,7 +113,7 @@ static int seekCookie(void* opaque, off64_t* offset, int origin) {
 #endif
 
 FileTable enumerateFiles(SourcePtr source, const Header& value, Workspace& work, bool canonical,
-    std::vector<NamedDirectory>* outputDirectories) {
+                         std::vector<NamedDirectory>* outputDirectories) {
     Cookie cookie{source};
 #ifdef ARM9
     fNDS = funopen(&cookie, readCookie, nullptr, seekCookie, nullptr);
@@ -121,7 +129,8 @@ FileTable enumerateFiles(SourcePtr source, const Header& value, Workspace& work,
     std::vector<NamedDirectory> localDirectories;
     tree = canonical ? (outputDirectories ? outputDirectories : &localDirectories) : nullptr;
     directoryIndices.assign(tree ? 4096 : 0, UINT32_MAX);
-    if (tree) tree->clear();
+    if (tree)
+        tree->clear();
     directories.clear();
     visitedFiles.assign(uint32_t(header.fat_size) / 8, false);
     FileTable result(work, source);

@@ -1,0 +1,15 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+PointerAlignment: Left
+SortIncludes: Never
+SortUsingDeclarations: Never
+BreakStringLiterals: false
+ReflowComments: Never
+FixNamespaceComments: false
+InsertNewlineAtEOF: false
+---
+Language: Json
+IndentWidth: 2
+ColumnLimit: 0
+BreakArrays: true

@@ -30,8 +30,7 @@ __asm__(".section .bss\n.balign 8\ntraceIrqStack:\n.space 8192\n"
 static bool writeTrace(const void* data, u32 offset, u32 length) {
     const char* bytes = data;
     for (u32 position = 0; position < length; position += 512) {
-        if (fileWrite(bytes + position, &traceFile, offset + position, 512) != 512
-            || (getMMCDevice(1)->error & 4)) {
+        if (fileWrite(bytes + position, &traceFile, offset + position, 512) != 512 || (getMMCDevice(1)->error & 4)) {
             return false;
         }
     }
@@ -57,12 +56,11 @@ bool traceInit(u32 cluster, const void* header) {
         return false;
     }
     resetPrevSect(&traceFile);
-    if (fileRead((char*)verifySector, &traceFile, 0, sizeof(verifySector)) != sizeof(verifySector)
-        || (getMMCDevice(1)->error & 4) || memcmp(sector, verifySector, sizeof(sector)) != 0) {
+    if (fileRead((char*)verifySector, &traceFile, 0, sizeof(verifySector)) != sizeof(verifySector) ||
+        (getMMCDevice(1)->error & 4) || memcmp(sector, verifySector, sizeof(sector)) != 0) {
         return false;
     }
-    return writeTrace(header, 512, 512)
-        && writeTrace((const void*)0x027FFC00, 1024, 512);
+    return writeTrace(header, 512, 512) && writeTrace((const void*)0x027FFC00, 1024, 512);
 }
 
 bool traceBootRead(u32 address, const void* data) {
@@ -92,7 +90,8 @@ bool traceBootComplete(u32 handler) {
 static void flushTrace(void) {
     if (!writeTrace(records, outputOffset, sizeof(records))) {
         REG_IME = 0;
-        while (1) {}
+        while (1) {
+        }
     }
     outputOffset += sizeof(records);
     if (outputOffset == 0x408000) {
@@ -133,8 +132,7 @@ u32* traceIrq(u32* saved) {
     record[30] = *(vu32*)0x027FFFC4;
     record[31] = *(vu32*)0x027FFFD0;
     if (vblank) {
-        if ((REG_KEYINPUT & (KEY_L | KEY_R | KEY_UP)) == 0
-            && (*(vu16*)0x04000136 & 1) == 0) {
+        if ((REG_KEYINPUT & (KEY_L | KEY_R | KEY_UP)) == 0 && (*(vu16*)0x04000136 & 1) == 0) {
             pauseFrames++;
         } else {
             pauseFrames = 0;

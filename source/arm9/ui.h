@@ -28,7 +28,8 @@ const np3d::CheatSelection& selectedCheats();
 void showCheats(np3d::SourcePtr rom, np3d::SourcePtr card);
 std::string cheatError(np3d::CheatStatus status);
 void preparing();
-void progress(const char* stage, uint32_t completed, uint32_t total, const char* detail, uint64_t elapsed, const PreparationProgress& preparation);
+void progress(const char* stage, uint32_t completed, uint32_t total, const char* detail, uint64_t elapsed,
+              const PreparationProgress& preparation);
 void report(bool working);
 void repairStorage();
 bool confirm(const std::string& detail);

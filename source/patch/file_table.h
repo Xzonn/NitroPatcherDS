@@ -14,7 +14,9 @@ struct FileEntry {
 };
 
 class FileTable {
-    struct Text { uint32_t offset, size; };
+    struct Text {
+        uint32_t offset, size;
+    };
     struct Record {
         Text name, rawName;
         uint32_t id, original, offset, size, directory, source;
@@ -49,7 +51,8 @@ class FileTable {
     Text store(const std::string& value);
     std::string string(Text value);
     uint32_t source(SourcePtr data, uint32_t offset, uint32_t size);
-public:
+
+  public:
     FileTable(Workspace& work, SourcePtr input);
     FileTable(FileTable&&) = default;
     FileTable(const FileTable&) = delete;

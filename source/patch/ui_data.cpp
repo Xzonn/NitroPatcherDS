@@ -24,20 +24,27 @@ std::string text(const cJSON* json, const char* key) {
 }
 
 void newline(std::string& output) {
-    if (!output.empty() && output.back() != '\n') output += '\n';
+    if (!output.empty() && output.back() != '\n')
+        output += '\n';
 }
 int leaveBlock(MD_BLOCKTYPE type, void*, void* opaque) {
-    if (type != MD_BLOCK_DOC) newline(*static_cast<std::string*>(opaque));
+    if (type != MD_BLOCK_DOC)
+        newline(*static_cast<std::string*>(opaque));
     return 0;
 }
 int markdownText(MD_TEXTTYPE type, const char* data, MD_SIZE size, void* opaque) {
     auto& output = *static_cast<std::string*>(opaque);
-    if (type == MD_TEXT_HTML) return 0;
-    if (type == MD_TEXT_BR || type == MD_TEXT_SOFTBR) { newline(output); return 0; }
+    if (type == MD_TEXT_HTML)
+        return 0;
+    if (type == MD_TEXT_BR || type == MD_TEXT_SOFTBR) {
+        newline(output);
+        return 0;
+    }
     if (type == MD_TEXT_ENTITY) {
         if (const ENTITY* entity = entity_lookup(data, size)) {
             std::u32string codepoints(1, entity->codepoints[0]);
-            if (entity->codepoints[1]) codepoints += entity->codepoints[1];
+            if (entity->codepoints[1])
+                codepoints += entity->codepoints[1];
             output += una::utf32to8(codepoints);
             return 0;
         }
@@ -62,15 +69,18 @@ std::string plainMarkdown(const std::string& input) {
 PatchInfo readPatchMetadata(const std::string& data) {
     una::error error;
     una::strict::utf8to32u(data, error);
-    if (error) return {};
+    if (error)
+        return {};
     const char* end = nullptr;
     Json json(cJSON_ParseWithLengthOpts(data.c_str(), data.size() + 1, &end, true), cJSON_Delete);
-    if (!cJSON_IsObject(json.get()) || end != data.c_str() + data.size()) return {};
+    if (!cJSON_IsObject(json.get()) || end != data.c_str() + data.size())
+        return {};
     PatchInfo result;
     auto property = [&](const char* name) -> const cJSON* {
         const cJSON* found = nullptr;
         for (auto item = json->child; item; item = item->next)
-            if (item->string && std::strcmp(item->string, name) == 0) found = item;
+            if (item->string && std::strcmp(item->string, name) == 0)
+                found = item;
         return found;
     };
     auto string = [&](const char* name) {
@@ -80,10 +90,13 @@ PatchInfo readPatchMetadata(const std::string& data) {
     auto version = property("formatVersion");
     if (version) {
         double value = version->valuedouble;
-        if (!cJSON_IsNumber(version) || !std::isfinite(value) || value < 1 || value > 9007199254740991.0 || std::floor(value) != value)
+        if (!cJSON_IsNumber(version) || !std::isfinite(value) || value < 1 || value > 9007199254740991.0 ||
+            std::floor(value) != value)
             result.error = "metadata.json formatVersion must be a positive safe integer";
-        else if (value != 1 && value != 2) result.error = "Unsupported XZP format version";
-        else result.formatVersion = uint32_t(value);
+        else if (value != 1 && value != 2)
+            result.error = "Unsupported XZP format version";
+        else
+            result.formatVersion = uint32_t(value);
     }
     result.id = string("id");
     result.name = string("name");
@@ -95,12 +108,15 @@ PatchInfo readPatchMetadata(const std::string& data) {
 }
 
 PatchInfo inspectPatch(const std::string& path) {
-    if (isDeltaPatch(path)) return {};
+    if (isDeltaPatch(path))
+        return {};
     Package package(path);
     PatchInfo result = package.metadata;
-    if (!result.error.empty()) return result;
+    if (!result.error.empty())
+        return result;
     for (const char* name : {"README.md", "README.txt"}) {
-        if (!package.has(name)) continue;
+        if (!package.has(name))
+            continue;
         auto bytes = package.bytes(name);
         std::string content(bytes.begin(), bytes.end());
         una::error error;
@@ -119,11 +135,13 @@ std::vector<std::string> listRoms(const std::string& root) {
     std::vector<std::string> result;
     while (dirent* entry = readdir(directory)) {
         std::string name = entry->d_name;
-        if (name.size() < 4 || normalize(name.substr(name.size() - 4)) != ".nds") continue;
+        if (name.size() < 4 || normalize(name.substr(name.size() - 4)) != ".nds")
+            continue;
         std::string path = root + "/roms/" + name;
         struct stat info;
         require(stat(path.c_str(), &info) == 0, "Cannot inspect ROM file: " + path);
-        if (S_ISREG(info.st_mode)) result.push_back(path);
+        if (S_ISREG(info.st_mode))
+            result.push_back(path);
     }
     require(closedir(directory) == 0, "Cannot close ROM directory");
     std::sort(result.begin(), result.end());
@@ -133,7 +151,8 @@ std::vector<std::string> listRoms(const std::string& root) {
 Settings loadSettings(const std::string& root) {
     Settings settings;
     std::string path = root + "/config/settings.json";
-    if (!exists(path)) return settings;
+    if (!exists(path))
+        return settings;
     auto input = std::make_shared<Disk>(path);
     auto bytes = readBytes(input, 0, input->size);
     bytes.push_back(0);
@@ -150,8 +169,9 @@ Settings loadSettings(const std::string& root) {
     }
     auto apPatch = cJSON_GetObjectItemCaseSensitive(json.get(), "apPatch");
     for (auto game = apPatch ? apPatch->child : nullptr; game; game = game->next) {
-        require(cJSON_IsBool(game) || (cJSON_IsNumber(game) && (game->valuedouble == 0 || game->valuedouble == 1 || game->valuedouble == 2)),
-            "Invalid game anti-piracy setting");
+        require(cJSON_IsBool(game) || (cJSON_IsNumber(game) &&
+                                       (game->valuedouble == 0 || game->valuedouble == 1 || game->valuedouble == 2)),
+                "Invalid game anti-piracy setting");
         settings.apPatch[game->string] = cJSON_IsBool(game) ? cJSON_IsTrue(game) : game->valueint;
     }
     auto skipRomMd5 = cJSON_GetObjectItemCaseSensitive(json.get(), "skipRomMd5");
@@ -195,30 +215,41 @@ void saveSettings(const std::string& root, const Settings& settings) {
     auto games = cJSON_AddObjectToObject(json.get(), "games");
     for (const auto& game : settings.games) {
         auto array = cJSON_AddArrayToObject(games, game.first.c_str());
-        for (const auto& patch : game.second) cJSON_AddItemToArray(array, cJSON_CreateString(patch.c_str()));
+        for (const auto& patch : game.second)
+            cJSON_AddItemToArray(array, cJSON_CreateString(patch.c_str()));
     }
     auto apPatch = cJSON_AddObjectToObject(json.get(), "apPatch");
-    for (const auto& game : settings.apPatch) cJSON_AddNumberToObject(apPatch, game.first.c_str(), game.second);
+    for (const auto& game : settings.apPatch)
+        cJSON_AddNumberToObject(apPatch, game.first.c_str(), game.second);
     auto skipRomMd5 = cJSON_AddObjectToObject(json.get(), "skipRomMd5");
-    for (const auto& game : settings.skipRomMd5) cJSON_AddBoolToObject(skipRomMd5, game.first.c_str(), game.second);
+    for (const auto& game : settings.skipRomMd5)
+        cJSON_AddBoolToObject(skipRomMd5, game.first.c_str(), game.second);
     auto limitOpenFiles = cJSON_AddObjectToObject(json.get(), "limitOpenFiles");
-    for (const auto& game : settings.limitOpenFiles) cJSON_AddBoolToObject(limitOpenFiles, game.first.c_str(), game.second);
+    for (const auto& game : settings.limitOpenFiles)
+        cJSON_AddBoolToObject(limitOpenFiles, game.first.c_str(), game.second);
     auto updateDisplay = cJSON_AddObjectToObject(json.get(), "updateDisplayWhileReading");
-    for (const auto& game : settings.updateDisplayWhileReading) cJSON_AddBoolToObject(updateDisplay, game.first.c_str(), game.second);
+    for (const auto& game : settings.updateDisplayWhileReading)
+        cJSON_AddBoolToObject(updateDisplay, game.first.c_str(), game.second);
     auto cheats = cJSON_AddObjectToObject(json.get(), "cheats");
     for (const auto& game : settings.cheats) {
         auto entry = cJSON_AddObjectToObject(cheats, game.first.c_str());
         cJSON_AddNumberToObject(entry, "gameCode", game.second.identity.gameCode);
         cJSON_AddNumberToObject(entry, "crc32", game.second.identity.crc32);
         auto enabled = cJSON_AddArrayToObject(entry, "enabled");
-        for (const auto& code : game.second.enabled) cJSON_AddItemToArray(enabled, cJSON_CreateString(code.c_str()));
+        for (const auto& code : game.second.enabled)
+            cJSON_AddItemToArray(enabled, cJSON_CreateString(code.c_str()));
     }
     char* data = cJSON_PrintUnformatted(json.get());
     require(data, "Cannot serialize settings");
     std::string path = root + "/config/settings.json";
-    { Disk output(path + ".new", "wb"); output.write(0, data, std::strlen(data)); output.sync(); }
+    {
+        Disk output(path + ".new", "wb");
+        output.write(0, data, std::strlen(data));
+        output.sync();
+    }
     cJSON_free(data);
-    if (exists(path)) require(unlink(path.c_str()) == 0, "Cannot replace settings.json");
+    if (exists(path))
+        require(unlink(path.c_str()) == 0, "Cannot replace settings.json");
     require(std::rename((path + ".new").c_str(), path.c_str()) == 0, "Cannot publish settings.json");
 }
 }

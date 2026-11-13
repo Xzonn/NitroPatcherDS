@@ -13,18 +13,28 @@ namespace np3d {
 constexpr uint32_t FormatVersion = 1;
 constexpr uint32_t RulesVersion = 3;
 constexpr uint32_t BufferSize = 65536;
-constexpr const char* DsModeDeltaError = "Prepare whole-ROM xdelta patches for DSi-enhanced games on a 3DS or DSi, then copy the prepared cache to the NDS. Use the same Game Card, patches and patch order.";
-constexpr const char* DsModeMd5Error = "NDS cannot verify the full ROM MD5 of a DSi-enhanced cartridge. Enable skipping ROM MD5, or prepare a verified cache on a 3DS or DSi.";
+constexpr const char* DsModeDeltaError =
+    "Prepare whole-ROM xdelta patches for DSi-enhanced games on a 3DS or DSi, then copy the prepared cache to the NDS. Use the same Game Card, patches and patch order.";
+constexpr const char* DsModeMd5Error =
+    "NDS cannot verify the full ROM MD5 of a DSi-enhanced cartridge. Enable skipping ROM MD5, or prepare a verified cache on a 3DS or DSi.";
 
 using FatalHandler = void (*)(const char*);
 void setFatalHandler(FatalHandler handler);
 [[noreturn]] void fail(const std::string& message);
 void require(bool condition, const std::string& message);
-inline void require(bool condition, const char* message) { if (!condition) fail(message); }
+inline void require(bool condition, const char* message) {
+    if (!condition)
+        fail(message);
+}
 
-struct PatchError { std::string message; };
+struct PatchError {
+    std::string message;
+};
 void patchRequire(bool condition, const std::string& message);
-inline void patchRequire(bool condition, const char* message) { if (!condition) patchRequire(false, std::string(message)); }
+inline void patchRequire(bool condition, const char* message) {
+    if (!condition)
+        patchRequire(false, std::string(message));
+}
 
 #if NP3D_PREPARE_TRACE
 #define NP3D_PREPARE_LOG(message) ::np3d::logPreparation(message)
@@ -132,7 +142,8 @@ struct Workspace {
     Workspace(const std::string& directory, SourcePtr card, bool dsOnly = false);
     std::shared_ptr<Map> map();
 };
-std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, const std::string& delta, const std::string& label = "");
+std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, const std::string& delta,
+                                const std::string& label = "");
 std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr delta, const std::string& label);
 std::shared_ptr<Map> buildRom(Workspace& work, SourcePtr original, Package& package);
 
@@ -145,8 +156,10 @@ struct Prepared {
     bool cancelled = false;
 };
 using PreparationConfirm = bool (*)();
-Prepared prepare(SourcePtr card, const std::string& patch, const std::string& root, bool dsOnly = false, bool skipRomMd5 = false, PreparationConfirm confirm = nullptr);
-Prepared prepare(SourcePtr card, const std::vector<std::string>& patches, const std::string& root, bool dsOnly = false, bool skipRomMd5 = false, PreparationConfirm confirm = nullptr);
+Prepared prepare(SourcePtr card, const std::string& patch, const std::string& root, bool dsOnly = false,
+                 bool skipRomMd5 = false, PreparationConfirm confirm = nullptr);
+Prepared prepare(SourcePtr card, const std::vector<std::string>& patches, const std::string& root, bool dsOnly = false,
+                 bool skipRomMd5 = false, PreparationConfirm confirm = nullptr);
 std::vector<std::string> listPatches(const std::string& root);
 
 }

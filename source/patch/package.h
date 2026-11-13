@@ -12,7 +12,10 @@ struct Package {
     mz_file_read_func reader = nullptr;
     void* readOpaque = nullptr;
 #endif
-    struct Member { unsigned int index; std::string name; };
+    struct Member {
+        unsigned int index;
+        std::string name;
+    };
     std::map<std::string, Member> entries;
     PatchInfo metadata;
     Workspace* work = nullptr;

@@ -30,13 +30,15 @@ struct DeltaOutput {
     explicit DeltaOutput(uint32_t bytes = BufferSize) : chunk(bytes), buffer(bytes), literals(bytes), history(bytes) {}
 
     void flush() {
-        if (!buffered) return;
+        if (!buffered)
+            return;
         target->payload->write(target->payload->size, literals.data(), buffered);
         buffered = 0;
     }
 
     void record(xd3_stream* stream, const uint8_t* data, uint32_t length) {
-        if (stream->dec_win_ind & 4) adler = mz_adler32(adler, data, length);
+        if (stream->dec_win_ind & 4)
+            adler = mz_adler32(adler, data, length);
         uint32_t first = std::min(length, chunk - size % chunk);
         std::memcpy(history.data() + size % chunk, data, first);
         std::memcpy(history.data(), data + first, length - first);
@@ -54,7 +56,8 @@ struct DeltaOutput {
             std::memcpy(literals.data() + buffered, data, take);
             buffered += take;
             record(stream, data, take);
-            if (buffered == chunk) flush();
+            if (buffered == chunk)
+                flush();
             data += take;
             length -= take;
         }
@@ -89,9 +92,10 @@ struct DeltaOutput {
 static int emit(xd3_stream* stream, const xd3_hinst* instruction, const uint8_t* data) {
     auto& state = *static_cast<DeltaOutput*>(stream->opaque);
     require(instruction->size <= 0x40000000 && instruction->addr <= 0x40000000,
-        "VCDIFF instruction exceeds ROM size limit");
+            "VCDIFF instruction exceeds ROM size limit");
     uint32_t length = instruction->size;
-    if (instruction->type == XD3_ADD) state.literal(stream, data, length);
+    if (instruction->type == XD3_ADD)
+        state.literal(stream, data, length);
     else if (instruction->type == XD3_RUN) {
         state.target->append(Kind::Fill, *data, length);
         std::memset(state.buffer.data(), *data, std::min(length, state.chunk));
@@ -106,21 +110,24 @@ static int emit(xd3_stream* stream, const xd3_hinst* instruction, const uint8_t*
             require(stream->dec_cpyoff <= 0x40000000, "VCDIFF source offset exceeds ROM size limit");
             SourcePtr input = (stream->dec_win_ind & 2) ? state.target : state.source;
             require(stream->dec_cpyoff <= input->size && stream->dec_cpylen <= input->size - stream->dec_cpyoff,
-                "VCDIFF source window exceeds source file");
+                    "VCDIFF source window exceeds source file");
             uint32_t take = std::min<uint32_t>(length, stream->dec_cpylen - address);
             state.target->copy(input, stream->dec_cpyoff + address, take);
             length -= take;
             uint32_t offset = stream->dec_cpyoff + address;
             while (take) {
                 uint32_t bytes = std::min(take, state.chunk);
-                if (input == state.target) state.read(offset, state.buffer.data(), bytes);
-                else input->read(offset, state.buffer.data(), bytes);
+                if (input == state.target)
+                    state.read(offset, state.buffer.data(), bytes);
+                else
+                    input->read(offset, state.buffer.data(), bytes);
                 state.record(stream, state.buffer.data(), bytes);
                 offset += bytes;
                 take -= bytes;
             }
             address = 0;
-        } else address -= stream->dec_cpylen;
+        } else
+            address -= stream->dec_cpylen;
         if (length) {
             uint32_t offset = stream->dec_winstart + address;
             require(offset < state.size, "VCDIFF target copy references unwritten data");
@@ -143,11 +150,11 @@ static int emit(xd3_stream* stream, const xd3_hinst* instruction, const uint8_t*
     return 0;
 }
 
-static uint32_t checksum(xd3_stream* stream) {
-    return static_cast<DeltaOutput*>(stream->opaque)->adler;
-}
+static uint32_t checksum(xd3_stream* stream) { return static_cast<DeltaOutput*>(stream->opaque)->adler; }
 
-struct alignas(std::max_align_t) DeltaAllocation { size_t length; };
+struct alignas(std::max_align_t) DeltaAllocation {
+    size_t length;
+};
 
 static void* allocate(void* opaque, size_t items, usize_t size) {
     auto& state = *static_cast<DeltaOutput*>(opaque);
@@ -156,16 +163,23 @@ static void* allocate(void* opaque, size_t items, usize_t size) {
         return nullptr;
     }
     size_t length = items * size + sizeof(DeltaAllocation);
-    if (length > state.budget - state.allocated) { state.exhausted = true; return nullptr; }
+    if (length > state.budget - state.allocated) {
+        state.exhausted = true;
+        return nullptr;
+    }
     auto allocation = static_cast<DeltaAllocation*>(std::malloc(length));
-    if (!allocation) { state.exhausted = true; return nullptr; }
+    if (!allocation) {
+        state.exhausted = true;
+        return nullptr;
+    }
     allocation->length = length;
     state.allocated += length;
     return allocation + 1;
 }
 
 static void release(void* opaque, void* address) {
-    if (!address) return;
+    if (!address)
+        return;
     auto& state = *static_cast<DeltaOutput*>(opaque);
     auto allocation = static_cast<DeltaAllocation*>(address) - 1;
     state.allocated -= allocation->length;
@@ -180,7 +194,8 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr inp
     logPreparation("DELTA begin name=" + label + " sourceSize=" + std::to_string(source->size));
     uint32_t chunk = work.dsOnly ? 16384 : BufferSize;
 #ifdef ARM9
-    if (!isDSiMode()) chunk = 16384;
+    if (!isDSiMode())
+        chunk = 16384;
 #endif
     DeltaOutput output(chunk);
     output.source = source;
@@ -188,7 +203,8 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr inp
     output.target = work.map();
     output.payload = std::make_unique<Cached>(output.target->payload);
 #ifdef ARM9
-    size_t available = reinterpret_cast<uintptr_t>(getHeapLimit()) - reinterpret_cast<uintptr_t>(getHeapEnd()) + mallinfo().fordblks;
+    size_t available =
+        reinterpret_cast<uintptr_t>(getHeapLimit()) - reinterpret_cast<uintptr_t>(getHeapEnd()) + mallinfo().fordblks;
     output.budget = available > BufferSize ? available - BufferSize : 0;
 #else
     output.budget = 8 * 1024 * 1024;
@@ -204,7 +220,8 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr inp
     stream.external_emit = emit;
     stream.external_adler32 = checksum;
     auto reject = [&](const char* message) -> std::shared_ptr<Map> {
-        work.error = std::string("Cannot decode VCDIFF: ") + (output.exhausted ? "Decoder memory budget exceeded" : message) + " | " + label;
+        work.error = std::string("Cannot decode VCDIFF: ") +
+                     (output.exhausted ? "Decoder memory budget exceeded" : message) + " | " + label;
         return nullptr;
     };
     xd3_source original = {};
@@ -215,10 +232,12 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr inp
     while (true) {
         NP3D_PREPARE_LOG("DELTA decode begin inputOffset=" + std::to_string(offset));
         int status = xd3_decode_input(&stream);
-        NP3D_PREPARE_LOG("DELTA decode done status=" + std::to_string(status) + " outputSize=" + std::to_string(output.target->size));
+        NP3D_PREPARE_LOG("DELTA decode done status=" + std::to_string(status) +
+                         " outputSize=" + std::to_string(output.target->size));
         if (status == XD3_INPUT) {
             if (offset == input->size) {
-                if (xd3_close_stream(&stream) != 0) return reject(stream.msg ? stream.msg : "Incomplete VCDIFF stream");
+                if (xd3_close_stream(&stream) != 0)
+                    return reject(stream.msg ? stream.msg : "Incomplete VCDIFF stream");
                 break;
             }
             uint32_t take = std::min(chunk, input->size - offset);
@@ -227,7 +246,8 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr inp
             NP3D_PREPARE_LOG("DELTA read done offset=" + std::to_string(offset));
             offset += take;
             xd3_avail_input(&stream, buffer.data(), take);
-            if (offset == input->size) xd3_set_flags(&stream, stream.flags | XD3_FLUSH);
+            if (offset == input->size)
+                xd3_set_flags(&stream, stream.flags | XD3_FLUSH);
         } else if (status == XD3_OUTPUT) {
             xd3_consume_output(&stream);
         } else if (status == XD3_GOTHEADER || status == XD3_WINSTART) {
@@ -238,7 +258,8 @@ std::shared_ptr<Map> applyDelta(Workspace& work, SourcePtr source, SourcePtr inp
             return reject(stream.msg ? stream.msg : "invalid stream");
         }
     }
-    if (!stream.dec_window_count) return reject("VCDIFF contains no target windows");
+    if (!stream.dec_window_count)
+        return reject("VCDIFF contains no target windows");
     cleanup.reset();
     output.flush();
     output.target->finish();

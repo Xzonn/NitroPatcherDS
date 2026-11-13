@@ -14,6 +14,6 @@ struct NamedDirectory {
     std::vector<uint32_t> files, children;
 };
 FileTable enumerateFiles(SourcePtr source, const Header& header, Workspace& work, bool canonical = false,
-    std::vector<NamedDirectory>* directories = nullptr);
+                         std::vector<NamedDirectory>* directories = nullptr);
 
 }

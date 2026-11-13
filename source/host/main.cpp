@@ -11,7 +11,8 @@ int main(int argc, char** argv) {
     makeDirectory(root + "/patches");
     std::string input = argv[2];
     std::string patch = root + "/patches/" + input.substr(input.find_last_of("/\\") + 1);
-    if (input != patch) copyFile(input, patch);
+    if (input != patch)
+        copyFile(input, patch);
     beginPreparationLog(root, patch);
     auto card = std::make_shared<Disk>(argv[1]);
     Prepared prepared = prepare(card, patch, root);
@@ -35,7 +36,7 @@ int main(int argc, char** argv) {
         counts[uint32_t(item.kind)] += item.length;
     }
     std::printf("%s\n%s\nROM %u bytes; CARD %u; PATCH %u; FILL %u\n",
-        prepared.reused ? "Cache reused" : "Cache prepared", prepared.directory.c_str(),
-        prepared.rom->size, counts[0], counts[1], counts[2]);
+                prepared.reused ? "Cache reused" : "Cache prepared", prepared.directory.c_str(), prepared.rom->size,
+                counts[0], counts[1], counts[2]);
     return 0;
 }

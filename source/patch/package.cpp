@@ -9,8 +9,8 @@ static size_t readArchive(void* opaque, mz_uint64 offset, void* output, size_t l
     logPreparation("ZIP read begin offset=" + std::to_string(offset) + " requested=" + std::to_string(length));
     size_t result = package.reader(package.readOpaque, offset, output, length);
     int error = errno;
-    logPreparation("ZIP read done offset=" + std::to_string(offset) + " returned=" + std::to_string(result)
-        + " errno=" + std::to_string(result == length ? 0 : error));
+    logPreparation("ZIP read done offset=" + std::to_string(offset) + " returned=" + std::to_string(result) +
+                   " errno=" + std::to_string(result == length ? 0 : error));
     errno = error;
     return result;
 }
@@ -38,12 +38,16 @@ Package::Package(const std::string& path) {
         require(total <= 0x40000000, "XZP uncompressed size exceeds limit");
         std::string name(info.m_full_filename, info.m_full_filename_size);
         bool ascii = std::all_of(name.begin(), name.end(), [](unsigned char byte) { return byte < 128; });
-        if (!ascii) name = convert(name, info.m_filename_utf8 ? "UTF-8" : "CP437");
-        for (char& byte : name) if (byte == '\\') byte = '/';
+        if (!ascii)
+            name = convert(name, info.m_filename_utf8 ? "UTF-8" : "CP437");
+        for (char& byte : name)
+            if (byte == '\\')
+                byte = '/';
         std::string key = normalize(name);
-        NP3D_PREPARE_LOG("ZIP entry=" + std::to_string(index) + " name=" + name + " method=" + std::to_string(info.m_method)
-            + " compressed=" + std::to_string(info.m_comp_size) + " size=" + std::to_string(info.m_uncomp_size)
-            + " crc32=" + std::to_string(info.m_crc32) + " header=" + std::to_string(info.m_local_header_ofs));
+        NP3D_PREPARE_LOG(
+            "ZIP entry=" + std::to_string(index) + " name=" + name + " method=" + std::to_string(info.m_method) +
+            " compressed=" + std::to_string(info.m_comp_size) + " size=" + std::to_string(info.m_uncomp_size) +
+            " crc32=" + std::to_string(info.m_crc32) + " header=" + std::to_string(info.m_local_header_ofs));
         if (!name.empty() && name.back() != '/') {
             entries[key] = {index, std::move(name)};
         }
@@ -65,9 +69,7 @@ Package::~Package() {
 
 bool Package::has(const std::string& name) const { return entries.find(normalize(name)) != entries.end(); }
 
-bool Package::needsMd5() const {
-    return has("md5.txt") || hasPreprocessing();
-}
+bool Package::needsMd5() const { return has("md5.txt") || hasPreprocessing(); }
 
 bool Package::hasPreprocessing() const {
     auto found = entries.lower_bound("preprocessing/");
@@ -90,12 +92,16 @@ struct Entry final : Source {
         require(iterator, "Cannot initialize XZP extraction: " + name);
         progress("Extracting patch file", 0, size, true, name.c_str());
     }
-    ~Entry() { if (iterator) mz_zip_reader_extract_iter_free(iterator); }
+    ~Entry() {
+        if (iterator)
+            mz_zip_reader_extract_iter_free(iterator);
+    }
     void read(uint32_t offset, void* output, uint32_t length) override {
         require(offset == position && length <= size - position, "Nonsequential XZP entry read");
         NP3D_PREPARE_LOG("INFLATE begin name=" + name + " output=" + std::to_string(position));
         size_t received = mz_zip_reader_extract_iter_read(iterator, output, length);
-        if (received != length || iterator->status < TINFL_STATUS_DONE) fail("Cannot decode XZP entry: " + name);
+        if (received != length || iterator->status < TINFL_STATUS_DONE)
+            fail("Cannot decode XZP entry: " + name);
         position += length;
         NP3D_PREPARE_LOG("INFLATE done name=" + name + " output=" + std::to_string(position));
         progress("Extracting patch file", position, size, true, name.c_str());
@@ -105,7 +111,8 @@ struct Entry final : Source {
         require(position == size && mz_zip_reader_extract_iter_read(iterator, &byte, 1) == 0, "Incomplete XZP entry");
         mz_bool verified = mz_zip_reader_extract_iter_free(iterator);
         iterator = nullptr;
-        if (!verified) fail("Cannot verify XZP entry: " + name);
+        if (!verified)
+            fail("Cannot verify XZP entry: " + name);
         logPreparation("EXTRACT done name=" + name + " bytes=" + std::to_string(position));
     }
 };
@@ -125,14 +132,17 @@ std::vector<uint8_t> Package::bytes(const std::string& name) {
 SourcePtr Package::delta(const std::string& name, SourcePtr source, const std::string& label) {
     auto input = std::make_shared<Entry>(*this, name);
     auto result = applyDelta(*work, source, input, label);
-    if (result) input->verify();
+    if (result)
+        input->verify();
     return result;
 }
 
 SourcePtr Package::replace(const std::string& name, SourcePtr source) {
     std::string patch = "xdelta/" + normalize(name);
-    if (has(patch)) return delta(patch, source, name);
-    if (!has(name)) return source;
+    if (has(patch))
+        return delta(patch, source, name);
+    if (!has(name))
+        return source;
     Entry input(*this, name);
     auto result = work->map();
     std::vector<uint8_t> buffer(BufferSize);

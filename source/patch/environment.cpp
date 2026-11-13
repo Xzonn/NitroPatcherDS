@@ -86,7 +86,8 @@ void probeFilesystem(FILE* report, const std::string& directory) {
     require(savedPosition > 0, "Cannot locate environment report data");
     std::vector<uint8_t> sample(std::min<uint32_t>(savedPosition, BufferSize));
     require(std::fseek(report, 0, SEEK_SET) == 0, "Cannot seek environment report sample");
-    require(std::fread(sample.data(), 1, sample.size(), report) == sample.size(), "Cannot read environment report sample");
+    require(std::fread(sample.data(), 1, sample.size(), report) == sample.size(),
+            "Cannot read environment report sample");
     require(std::fseek(report, savedPosition, SEEK_SET) == 0, "Cannot restore environment report position");
     environmentRecord(report, "filesystem.sample source=environment-report bytes=%u", unsigned(sample.size()));
     environmentRecord(report, "filesystem.cleanup.begin");
@@ -136,7 +137,8 @@ void probeFilesystem(FILE* report, const std::string& directory) {
     result = stat(temporary.c_str(), &info);
     recordResult(report, "stat", result, errno);
     require(result == 0 && info.st_size == off_t(sample.size()), "Environment probe sample size mismatch");
-    environmentRecord(report, "stat size=%lld mode=%lo", static_cast<long long>(info.st_size), static_cast<unsigned long>(info.st_mode));
+    environmentRecord(report, "stat size=%lld mode=%lo", static_cast<long long>(info.st_size),
+                      static_cast<unsigned long>(info.st_mode));
     environmentRecord(report, "fopen.read.begin");
     errno = 0;
     FILE* input = std::fopen(temporary.c_str(), "rb");
@@ -216,7 +218,8 @@ void probeFilesystem(FILE* report, const std::string& directory) {
             break;
         }
         environmentRecord(report, "readdir.name=%s", entry->d_name);
-        if (std::strcmp(entry->d_name, "sample.bin") == 0) found = true;
+        if (std::strcmp(entry->d_name, "sample.bin") == 0)
+            found = true;
     }
     require(found, "Environment probe directory entry is missing");
     environmentRecord(report, "closedir.begin");

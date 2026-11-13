@@ -11,7 +11,12 @@ icon = Image.open(args.icon).convert("RGBA").resize((32, 32), Image.Resampling.L
 indexed = icon.convert("RGB").quantize(colors=15)
 bitmap = Image.new("P", (32, 32))
 bitmap.putpalette([0, 0, 0] + indexed.getpalette()[:45] + [0] * (256 * 3 - 48))
-bitmap.putdata([color + 1 if alpha >= 128 else 0 for color, (_, _, _, alpha) in zip(indexed.get_flattened_data(), icon.get_flattened_data())])
+bitmap.putdata(
+    [
+        color + 1 if alpha >= 128 else 0
+        for color, (_, _, _, alpha) in zip(indexed.get_flattened_data(), icon.get_flattened_data())
+    ]
+)
 bitmap.save("assets/icon.bmp")
 font = NFTR.fromFile("assets/fonts/song12.nftr")
 characters = font.characterMap
@@ -25,7 +30,11 @@ def centered(text, y):
     for character in text:
         index = characters[ord(character)]
         glyph = font.glyphs[index].renderAsImage()
-        screen.paste("black", (x + widths[index].left, y + 10 - (font.cglpUnknown & 255)), glyph.point(lambda value: 255 - value))
+        screen.paste(
+            "black",
+            (x + widths[index].left, y + 10 - (font.cglpUnknown & 255)),
+            glyph.point(lambda value: 255 - value),
+        )
         x += widths[index].charWidth
 
 

@@ -5,7 +5,8 @@
 
 np3d::SourcePtr openRomFile(const std::string& path, sNDSHeader& header, std::string& error) {
     struct stat info;
-    if (stat(path.c_str(), &info) != 0 || !S_ISREG(info.st_mode) || info.st_size < 0x8000 || info.st_size > 0x40000000) {
+    if (stat(path.c_str(), &info) != 0 || !S_ISREG(info.st_mode) || info.st_size < 0x8000 ||
+        info.st_size > 0x40000000) {
         error = "Cannot open this Nintendo DS ROM.";
         return nullptr;
     }
@@ -27,13 +28,17 @@ std::string prepareRomSave(const sNDSHeader& header) {
     uint32_t code;
     std::memcpy(&code, header.gameCode, sizeof(code));
     Disk types("boot:/rom-save-types.bin");
-    struct { uint32_t gameCode, type; } entry = {};
+    struct {
+        uint32_t gameCode, type;
+    } entry = {};
     uint32_t first = 0, count = types.size / sizeof(entry), end = count;
     while (first < end) {
         uint32_t middle = first + (end - first) / 2;
         types.read(middle * sizeof(entry), &entry, sizeof(entry));
-        if (entry.gameCode < code) first = middle + 1;
-        else end = middle;
+        if (entry.gameCode < code)
+            first = middle + 1;
+        else
+            end = middle;
     }
     require(first < count, "Unknown save type for this ROM.");
     types.read(first * sizeof(entry), &entry, sizeof(entry));
@@ -42,7 +47,8 @@ std::string prepareRomSave(const sNDSHeader& header) {
     std::snprintf(identity, sizeof(identity), "%.4s-%04x-%02x", header.gameCode, header.headerCRC16, header.romversion);
     makeDirectory("sd:/nitro-patcher/saves");
     std::string path = std::string("sd:/nitro-patcher/saves/") + identity + ".sav";
-    if (exists(path) || sramlen[entry.type] == 0) return path;
+    if (exists(path) || sramlen[entry.type] == 0)
+        return path;
     {
         Disk output(path + ".new", "wb");
         std::vector<uint8_t> buffer(16384, 0xff);

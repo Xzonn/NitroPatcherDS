@@ -16,7 +16,7 @@ CheatIdentity cheatIdentity(SourcePtr source);
 
 struct CheatData;
 class Cheats {
-public:
+  public:
     Cheats();
     ~Cheats();
     CheatStatus load(const std::string& database, SourcePtr rom, SourcePtr card);
@@ -33,11 +33,13 @@ public:
     void write(const std::string& path);
     bool patched = false;
     CheatIdentity identity;
-private:
+
+  private:
     std::unique_ptr<CheatData> data;
     std::string key(size_t index) const;
 };
 
-CheatStatus writeCheats(const std::string& root, SourcePtr rom, SourcePtr card, const CheatSelection& selection, uint32_t limit);
+CheatStatus writeCheats(const std::string& root, SourcePtr rom, SourcePtr card, const CheatSelection& selection,
+                        uint32_t limit);
 
 }

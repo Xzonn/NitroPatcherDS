@@ -15,8 +15,11 @@ args = parser.parse_args()
 def load(path):
     source = TTFont(path, fontNumber=0)
     mapping = source.getBestCmap()
-    strike_index = next(index for index, strike in enumerate(source["EBLC"].strikes)
-                        if (strike.bitmapSizeTable.ppemX, strike.bitmapSizeTable.ppemY) == (12, 12))
+    strike_index = next(
+        index
+        for index, strike in enumerate(source["EBLC"].strikes)
+        if (strike.bitmapSizeTable.ppemX, strike.bitmapSizeTable.ppemY) == (12, 12)
+    )
     strike = source["EBLC"].strikes[strike_index]
     baseline = strike.bitmapSizeTable.hori.ascender
     font = ImageFont.truetype(path, 12, index=0, layout_engine=ImageFont.Layout.BASIC)
@@ -58,7 +61,7 @@ def save(characters, path):
         mapping[code] = len(result.glyphs)
         result.glyphs.append(glyph)
         widths.append(width)
-    result.alterCharIndex = mapping[ord('?')]
+    result.alterCharIndex = mapping[ord("?")]
     result.widthBlocks = [WidthBlock(0, widths)]
     result.mappingBlocks = [MappingBlock(min(mapping), max(mapping), 2, mapping)]
     with open(path, "wb") as writer:
