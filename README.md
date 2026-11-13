@@ -6,7 +6,9 @@ NitroPatcherDS applies patches to Nintendo DS game cartridges on a 3DS, 2DS, DSi
 
 ## Download
 
-Download the package for your console. Each package includes the app, folders for patches and a cheat database, and user guides in English and Chinese.
+Download the package for your console.
+
+- GitHub: <https://github.com/Xzonn/NitroPatcherDS/releases/latest>
 
 | Console      | Package               | Requirements                                                                |
 | ------------ | --------------------- | --------------------------------------------------------------------------- |

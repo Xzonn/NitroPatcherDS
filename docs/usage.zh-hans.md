@@ -7,7 +7,7 @@ NitroPatcherDS 可以在 3DS／2DS、DSi，以及支持在 NDS 模式下使用 S
 ### 补丁软件
 
 - GitHub：<https://github.com/Xzonn/NitroPatcherDS/releases/latest>
-- 百度网盘：<https://pan.baidu.com/s/1wyerPzPow6Iq8bkhJeJvZA?pwd=ntpc>
+- 百度网盘：<https://pan.baidu.com/s/19HBT5vkzvqoA9OCl6Y4vJQ?pwd=ntpc>
 
 ### 汉化补丁
 

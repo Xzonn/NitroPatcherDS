@@ -6,7 +6,10 @@ NitroPatcherDS 可以在 3DS／2DS、DSi，以及支持在 NDS 模式下使用 S
 
 ## 下载安装包
 
-下载对应主机的压缩包。每个包都包含程序、补丁目录、金手指数据库目录和中英文使用说明。
+下载对应主机的压缩包。
+
+- GitHub: <https://github.com/Xzonn/NitroPatcherDS/releases/latest>
+- 百度网盘：<https://pan.baidu.com/s/19HBT5vkzvqoA9OCl6Y4vJQ?pwd=ntpc>
 
 | 主机        | 安装包                | 所需环境                                                                   |
 | ----------- | --------------------- | -------------------------------------------------------------------------- |
