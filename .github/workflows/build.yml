@@ -3,11 +3,12 @@ name: Build
 on:
   push:
     branches: [master]
+    tags: ["v*"]
   pull_request:
     branches: [master]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -44,3 +45,14 @@ jobs:
           path: out/NitroPatcherDS.zip
           archive: false
           if-no-files-found: error
+
+      - name: Create draft release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            out/NitroPatcher3DS.zip out/NitroPatcherDSi.zip out/NitroPatcherDS.zip \
+            --draft --verify-tag --title "$RELEASE_TAG" --notes ""
