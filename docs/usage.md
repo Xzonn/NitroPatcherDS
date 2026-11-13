@@ -108,6 +108,7 @@ Follow the patch authors' instructions when combining patches. For example, the 
 - **Synchronous read wait**: On 3DS / DSi, choose Automatic, Enabled or Disabled. Automatic by default and saved per game. Try enabling this if a game displays flickering, corrupted graphics or content from the wrong screen.
 - **Start original**: Launch the current cartridge with patches and cheats disabled.
 - **Read another Game Card**: Change the current game.
+- **Clear current game cache**: Delete cached files for the current game. Try this to free up space or if the existing cache causes errors.
 - **Environment report**: Create a report about the console and SD card to help diagnose problems.
 - **Interface language**: Multiple languages are supported, including Simplified Chinese, Traditional Chinese, Japanese, English and Korean. Press A to save your choice, or B to restore the previous language.
 - **Repair memory card**: Check allocation chains, FAT copies and free space across the storage card.
