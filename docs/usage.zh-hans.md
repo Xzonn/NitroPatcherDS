@@ -2,6 +2,20 @@
 
 NitroPatcherDS 可以在 3DS／2DS、DSi，以及支持在 NDS 模式下使用 Slot 2 烧录卡的 DS／DS Lite 上为 NDS 游戏卡带应用补丁。游戏运行时从卡带和存储卡读取内容，存档直接读写原卡带。
 
+## 下载
+
+### 补丁软件
+
+- GitHub：<https://github.com/Xzonn/NitroPatcherDS/releases/latest>
+- 百度网盘：<https://pan.baidu.com/s/1wyerPzPow6Iq8bkhJeJvZA?pwd=ntpc>
+
+### 汉化补丁
+
+- 所有 Xzonn 之前发布的 NDS 游戏用的都是 xzp 补丁，基本都可以直接使用。汇总链接：<https://pan.baidu.com/s/1maqi_aZXmVj8RbfJv1LbNA?pwd=ntpc>
+- 对于其他汉化组汉化的游戏，此处整理了部分热门游戏的汉化补丁。汇总链接：<https://pan.baidu.com/s/1u4vZy4GsA1fh69vKD7hJvw?pwd=ntpc>
+
+**注意**：部分补丁未经完整测试；对于以上补丁如有问题，请及时反馈。
+
 ## 安装
 
 ### 3DS／2DS
@@ -130,4 +144,7 @@ NDS 无法读取完整的 DSi 区域，因此这类游戏默认开启“跳过 R
 
 如果准备补丁时出现文件打开失败，可以在菜单中将“同时打开文件数上限”设为 16。3DS／DSi 上游戏画面闪烁或错乱时，可以尝试开启“同步读取等待”。
 
-准备或启动失败时，请拍摄记录错误详情。反馈问题时，请附上软件版本、游戏名称与版本、补丁名称和应用顺序，并将 SD 卡上的 `nitro-patcher` 文件夹打包提供。
+以上解决方案都已尝试，但仍然在准备或启动失败时，请拍摄记录错误详情。反馈问题时，请附上软件版本、游戏名称与版本、补丁名称和应用顺序，并将 SD 卡上的 `nitro-patcher` 文件夹打包提供。反馈链接：
+
+- Bilibili：<https://space.bilibili.com/16114399>
+- GitHub：<https://github.com/Xzonn/NitroPatcherDS/issues>

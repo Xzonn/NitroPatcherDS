@@ -2,6 +2,10 @@
 
 NitroPatcherDS applies patches to Nintendo DS game cartridges on a 3DS, 2DS, DSi, or a DS / DS Lite with a Slot-2 flashcart that supports DS mode. Games read data from both the cartridge and the storage card, and save directly to the original cartridge.
 
+## Downloads
+
+- GitHub: <https://github.com/Xzonn/NitroPatcherDS/releases/latest>
+
 ## Installation
 
 ### 3DS / 2DS
@@ -38,10 +42,10 @@ You need a Slot-2 flashcart that supports DS mode. SuperCard flashcarts running 
 
 ## Supported patches
 
-| Extension | Contents                                                |
-| --------- | ------------------------------------------------------- |
-| `.xzp`    | A NitroPatcher patch package                            |
-| `.xdelta` | An xdelta/VCDIFF patch made for a complete ROM          |
+| Extension | Contents                                       |
+| --------- | ---------------------------------------------- |
+| `.xzp`    | A NitroPatcher patch package                   |
+| `.xdelta` | An xdelta/VCDIFF patch made for a complete ROM |
 
 Check that your cartridge matches the game region and revision required by the patch.
 
@@ -82,22 +86,22 @@ Follow the patch authors' instructions when combining patches. For example, the 
 
 ## Buttons and touch controls
 
-| Control              | Function                                                                |
-| -------------------- | ----------------------------------------------------------------------- |
-| Up / Down            | Move the selection                                                      |
-| Left / Right / L / R | Change pages                                                            |
-| A                    | Enable or disable a patch in the patch list; confirm a menu choice      |
-| START                | Launch the game from the patch list                                     |
-| X / SELECT           | Open the menu from the main screen                                      |
-| Y                    | View information and a description for the highlighted patch            |
-| B                    | Go back when indicated on screen                                        |
+| Control              | Function                                                           |
+| -------------------- | ------------------------------------------------------------------ |
+| Up / Down            | Move the selection                                                 |
+| Left / Right / L / R | Change pages                                                       |
+| A                    | Enable or disable a patch in the patch list; confirm a menu choice |
+| START                | Launch the game from the patch list                                |
+| X / SELECT           | Open the menu from the main screen                                 |
+| Y                    | View information and a description for the highlighted patch       |
+| B                    | Go back when indicated on screen                                   |
 
 ### In-game controls
 
-| Control                                    | Function                    |
-| ------------------------------------------ | --------------------------- |
-| Hold L + R + Down + B for about two seconds | Return to NitroPatcherDS     |
-| L + Down + SELECT                          | Open the nds-bootstrap menu |
+| Control                                     | Function                    |
+| ------------------------------------------- | --------------------------- |
+| Hold L + R + Down + B for about two seconds | Return to NitroPatcherDS    |
+| L + Down + SELECT                           | Open the nds-bootstrap menu |
 
 ## Menu
 
@@ -130,4 +134,6 @@ If an error occurs after launch, try disabling built-in anti-piracy patches for 
 
 If patch preparation fails to open a file, set **Max files open at once** to 16 in the menu. For flickering or corrupted graphics on 3DS / DSi, try enabling **Synchronous read wait**.
 
-If preparation or launch fails, take a photo of the error details. When reporting a problem, include the app version, game title and revision, patch names and order, and an archive of the `nitro-patcher` folder from the SD card.
+If preparation or launch still fails after trying the suggestions above, take a photo of the error details. When reporting a problem, include the app version, game title and revision, patch names and order, and an archive of the `nitro-patcher` folder from the SD card. Report problems here:
+
+- GitHub: <https://github.com/Xzonn/NitroPatcherDS/issues>
