@@ -154,6 +154,10 @@ int main(int argc, char** argv) {
             ui::repairStorage();
             continue;
         }
+        if (action == ui::Action::ClearCache) {
+            ui::clearCache();
+            continue;
+        }
         if (action == ui::Action::ChangeCard) {
             romPath.clear();
             persistentCard.reset();

@@ -778,5 +778,23 @@
     "key": "menu.ap_patch.force",
     "original": "Forced",
     "translation": "强制"
+  },
+  {
+    "index": 131,
+    "key": "menu.clear_game_cache",
+    "original": "Clear current game cache",
+    "translation": "清理当前游戏缓存"
+  },
+  {
+    "index": 132,
+    "key": "cache_cleanup.working",
+    "original": "Clearing cache...",
+    "translation": "正在清理缓存……"
+  },
+  {
+    "index": 133,
+    "key": "cache_cleanup.done",
+    "original": "Cache cleared. It will be prepared again the next time you start this game.",
+    "translation": "缓存已清理，下次启动将重新准备。"
   }
 ]

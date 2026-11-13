@@ -778,5 +778,23 @@
     "key": "menu.ap_patch.force",
     "original": "Forced",
     "translation": "강제"
+  },
+  {
+    "index": 131,
+    "key": "menu.clear_game_cache",
+    "original": "Clear current game cache",
+    "translation": "현재 게임 캐시 삭제"
+  },
+  {
+    "index": 132,
+    "key": "cache_cleanup.working",
+    "original": "Clearing cache...",
+    "translation": "캐시를 삭제하는 중..."
+  },
+  {
+    "index": 133,
+    "key": "cache_cleanup.done",
+    "original": "Cache cleared. It will be prepared again the next time you start this game.",
+    "translation": "캐시를 삭제했습니다. 다음 실행 시 다시 준비합니다."
   }
 ]

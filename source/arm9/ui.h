@@ -4,7 +4,7 @@
 #include <nds.h>
 
 namespace ui {
-enum class Action { None, Launch, Original, Report, ReadCard, ChangeCard, RepairStorage, Cheats, ReadRom };
+enum class Action { None, Launch, Original, Report, ReadCard, ChangeCard, RepairStorage, Cheats, ReadRom, ClearCache };
 struct PreparationProgress {
     uint32_t fileNumber = 0, fileCount = 0;
     int64_t remaining = -1;
@@ -31,6 +31,7 @@ void preparing();
 void progress(const char* stage, uint32_t completed, uint32_t total, const char* detail, uint64_t elapsed,
               const PreparationProgress& preparation);
 void report(bool working);
+void clearCache();
 void repairStorage();
 bool confirm(const std::string& detail);
 void error(const std::string& detail, bool mismatch = false);

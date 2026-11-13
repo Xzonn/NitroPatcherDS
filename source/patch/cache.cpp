@@ -67,6 +67,18 @@ static std::string cardDigest(SourcePtr card, const std::string& root, const std
     return md5;
 }
 
+void clearGameCache(const std::string& root, const std::string& cardKey) {
+    for (const char* suffix : {"", "-ds"}) {
+        removeTree(root + "/cache/" + cardKey + suffix);
+        removeTree(root + "/config/patches/" + cardKey + suffix);
+    }
+    for (const char* suffix : {".json", ".json.new"}) {
+        std::string path = root + "/config/cards/" + cardKey + suffix;
+        if (exists(path))
+            require(unlink(path.c_str()) == 0, "Cannot remove " + path);
+    }
+}
+
 static bool complete(const std::string& directory, const std::string& patch, const std::string& identity,
                      uint32_t cardSize, bool checkMd5 = false, bool legacyChecked = true) {
     for (const char* name : {"complete", "manifest.json", "map.bin", "data.bin"})

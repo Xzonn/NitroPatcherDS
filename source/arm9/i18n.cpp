@@ -140,7 +140,10 @@ const char* const keys[] = {"patch_list.title",
                             "menu.select_rom",
                             "rom_selection.empty",
                             "menu.ap_patch.default",
-                            "menu.ap_patch.force"};
+                            "menu.ap_patch.force",
+                            "menu.clear_game_cache",
+                            "cache_cleanup.working",
+                            "cache_cleanup.done"};
 static_assert(sizeof(keys) / sizeof(keys[0]) == int(Text::Count));
 using Json = std::unique_ptr<cJSON, decltype(&cJSON_Delete)>;
 Json read(const std::string& path) {

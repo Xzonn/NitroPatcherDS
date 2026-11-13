@@ -135,6 +135,9 @@ enum class Text {
     NoRoms,
     ApPatchDefault,
     ApPatchForce,
+    ClearCache,
+    ClearingCache,
+    CacheCleared,
     Count
 };
 extern int LanguageCount;

@@ -32,7 +32,8 @@ enum class Page {
     Confirm,
     Cheats,
     CheatInfo,
-    Roms
+    Roms,
+    Cache
 };
 enum class Command {
     Toggle,
@@ -64,7 +65,8 @@ enum class Command {
     CheatInfo,
     ClearCheats,
     Roms,
-    ReadRom
+    ReadRom,
+    ClearCache
 };
 constexpr Text MenuLabels[] = {Text::Cheats,
                                Text::ApPatch,
@@ -75,6 +77,7 @@ constexpr Text MenuLabels[] = {Text::Cheats,
 #endif
                                Text::Original,
                                Text::ChangeCard,
+                               Text::ClearCache,
                                Text::SelectRom,
                                Text::Report,
                                Text::Language,
@@ -89,6 +92,7 @@ constexpr Command MenuCommands[] = {Command::Cheats,
 #endif
                                     Command::Original,
                                     Command::ChangeCard,
+                                    Command::ClearCache,
                                     Command::Roms,
                                     Command::Report,
                                     Command::Language,
@@ -109,13 +113,14 @@ struct State {
     unsigned int ticks = 0, focusTick = 0;
     bool first = false, hasCard = false, fatal = false, mismatch = false, reportWorking = false;
     bool cardMissing = false, cardReinsert = false;
+    bool cacheWorking = false;
     bool defaultSkipRomMd5 = false;
     bool storageWorking = false, storageReady = false, storageWriting = false;
     int patchNumber = 1;
     uint32_t completed = 0, total = 0;
     uint64_t elapsed = 0;
     PreparationProgress preparation;
-    std::string gameKey, detail, stage, progressDetail;
+    std::string gameKey, cacheKey, detail, stage, progressDetail;
     np3d::Settings settings;
     std::unique_ptr<np3d::Cheats> cheats;
     np3d::CheatStatus cheatStatus = np3d::CheatStatus::NotFound;
@@ -571,6 +576,13 @@ void render() {
                  : format(Text::Remaining, fmt::arg("seconds", (state.preparation.remaining + 999) / 1000)),
              8, 178);
         break;
+    case Page::Cache:
+        heading(tr(Text::ClearCache));
+        paragraph(1, tr(state.cacheWorking ? Text::ClearingCache : Text::CacheCleared), 8, 40);
+        separator();
+        if (!state.cacheWorking)
+            backKey();
+        break;
     case Page::Report:
         heading(tr(state.reportWorking ? Text::ReportWorking : Text::ReportDone));
         separator();
@@ -770,6 +782,10 @@ void command(Command value, int argument = 0) {
     case Command::RepairStorage:
         pending = Action::RepairStorage;
         break;
+    case Command::ClearCache:
+        if (state.hasCard)
+            pending = Action::ClearCache;
+        break;
     case Command::ReadCard:
         pending = Action::ReadCard;
         break;
@@ -945,6 +961,8 @@ bool setGame(np3d::SourcePtr card, const sNDSHeader& header, bool romFile) {
     char identity[32];
     std::snprintf(identity, sizeof(identity), "%.4s-%04x-%02x", header.gameCode, header.headerCRC16, header.romversion);
     state.gameKey = identity;
+    auto rawHeader = np3d::readBytes(card, 0, 512);
+    state.cacheKey = np3d::digest(rawHeader.data(), rawHeader.size(), true) + "-" + std::to_string(card->size);
     state.defaultSkipRomMd5 = !romFile && !isDSiMode() && header.unitCode == 2;
     state.selected.clear();
     for (const auto& name : state.settings.games[state.gameKey]) {
@@ -975,6 +993,7 @@ void noCard(bool missing, bool reinsert) {
     state.hasCard = false;
     state.hasBanner = false;
     state.gameKey.clear();
+    state.cacheKey.clear();
     state.selected.clear();
     state.info = {};
     state.cardMissing = missing;
@@ -1143,6 +1162,16 @@ void progress(const char* stage, uint32_t completed, uint32_t total, const char*
 void report(bool working) {
     go(Page::Report);
     state.reportWorking = working;
+    render();
+}
+void clearCache() {
+    if (!state.hasCard)
+        return;
+    state.cacheWorking = true;
+    go(Page::Cache);
+    render();
+    np3d::clearGameCache(Root, state.cacheKey);
+    state.cacheWorking = false;
     render();
 }
 void repairStorage() {

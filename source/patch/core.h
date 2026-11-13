@@ -160,6 +160,7 @@ Prepared prepare(SourcePtr card, const std::string& patch, const std::string& ro
                  bool skipRomMd5 = false, PreparationConfirm confirm = nullptr);
 Prepared prepare(SourcePtr card, const std::vector<std::string>& patches, const std::string& root, bool dsOnly = false,
                  bool skipRomMd5 = false, PreparationConfirm confirm = nullptr);
+void clearGameCache(const std::string& root, const std::string& cardKey);
 std::vector<std::string> listPatches(const std::string& root);
 
 }

@@ -778,5 +778,23 @@
     "key": "menu.ap_patch.force",
     "original": "Forced",
     "translation": "Forced"
+  },
+  {
+    "index": 131,
+    "key": "menu.clear_game_cache",
+    "original": "Clear current game cache",
+    "translation": "Clear current game cache"
+  },
+  {
+    "index": 132,
+    "key": "cache_cleanup.working",
+    "original": "Clearing cache...",
+    "translation": "Clearing cache..."
+  },
+  {
+    "index": 133,
+    "key": "cache_cleanup.done",
+    "original": "Cache cleared. It will be prepared again the next time you start this game.",
+    "translation": "Cache cleared. It will be prepared again the next time you start this game."
   }
 ]
